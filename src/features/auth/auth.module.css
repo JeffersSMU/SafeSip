@@ -6,6 +6,18 @@
   flex-direction: column;
   gap: 16px;
 }
+/* Login has little content, so center it vertically instead of leaving dead
+   space at the bottom. margin:auto absorbs the slack and still lets the form
+   scroll (never clips the top) if the viewport is very short. */
+.loginPage {
+  justify-content: safe center;
+}
+.loginPage > :first-child {
+  margin-top: auto;
+}
+.loginPage > :last-child {
+  margin-bottom: auto;
+}
 .brand {
   display: flex;
   flex-direction: column;
@@ -47,9 +59,34 @@
   font-size: 13px;
   color: var(--text-muted);
 }
-.forgot {
-  align-self: flex-end;
+.loginRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: -6px;
+}
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.remember input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--brand);
+  cursor: pointer;
+  flex: none;
+}
+.forgot {
+  margin-top: 0;
+  font-size: 14px;
+  flex: none;
 }
 .divider {
   display: flex;

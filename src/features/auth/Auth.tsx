@@ -40,7 +40,7 @@ function Field({ id, label, value, onChange, type = 'text', autoComplete }: { id
       <label className={ui.label} htmlFor={id}>
         {label}
       </label>
-      <input id={id} className={ui.input} type={type} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} />
+      <input id={id} className={ui.input} type={type} autoComplete={autoComplete} value={value} onChange={(e) => onChange(e.target.value)} placeholder={`Enter ${label}`}  />
     </div>
   );
 }
@@ -48,21 +48,28 @@ function Field({ id, label, value, onChange, type = 'text', autoComplete }: { id
 function Login() {
   const { set, login, toast } = useUi.getState();
   // Pre-filled with Chloe's details to speed up recording (DESIGN §4.1). Nothing typed here is sent anywhere.
-  const [username, setUsername] = useState('chloe.tan');
-  const [password, setPassword] = useState('nightout');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const submit = (e: FormEvent) => {
     e.preventDefault();
     unlockAudio();
     login(roleForUsername(username));
   };
   return (
-    <form className={s.page} onSubmit={submit}>
+    <form className={cx(s.page, s.loginPage)} onSubmit={submit}>
       <Brand />
-      <Field id="login-user" label="Username" value={username} onChange={setUsername} autoComplete="username" />
-      <Field id="login-pass" label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
-      <Button variant="text" className={s.forgot} onClick={() => toast('Password reset isn’t part of this prototype')}>
-        Forgot password?
-      </Button>
+      <Field id="login-user" label="Username" value={username} onChange={setUsername} autoComplete="on" />
+      <Field id="login-pass" label="Password" type="password" value={password} onChange={setPassword} autoComplete="on" />
+      <div className={s.loginRow}>
+        <label className={s.remember}>
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Remember me
+        </label>
+        <Button variant="text" className={s.forgot} onClick={() => toast('Password reset isn’t part of this prototype')}>
+          Forgot password?
+        </Button>
+      </div>
       <Button variant="primary" block type="submit">
         Login
       </Button>
