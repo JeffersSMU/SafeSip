@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Car, MapPin, MessageSquare, Phone, Siren } from 'lucide-react';
-import { MapView, pinHtml, type MapLine, type MapMarker } from '../../components/MapView';
+import { AlertTriangle, Car, MessageSquare, Phone, Siren } from 'lucide-react';
+import { DEST_ANCHOR, DEST_SIZE, MapView, destHtml, pinHtml, type MapLine, type MapMarker, type PinTone } from '../../components/MapView';
 import { Avatar, Button, Header, LinkButton, Modal, STATUS_COLOR, SessionPill, StatusPill, cx, ui } from '../../components/ui';
-import { HELEN } from '../../data/cast';
 import { useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
+import { nowMin, ridePositions } from '../../store/world';
 import { telHref, smsHref } from '../user/PersonSheet';
 import { childView, linkedIds, rankChildren, type ChildView } from './children';
 import s from './watcher.module.css';
 
 const SG_CENTER: [number, number] = [1.3521, 103.8198];
+const TONE: Record<string, PinTone> = { SAFE: 'safe', MISSING: 'missing', SOS: 'sos', OUT: 'brand' };
 
 function fadingTrail(points: [number, number][]): MapLine[] {
   if (points.length < 2) return [];
@@ -91,21 +92,25 @@ export function WatcherMap() {
       z: 1000,
       label: `${sel.person.name}, ${sel.status}`,
       html: sel.ride && sel.ride.stage === 'trip'
-        ? pinHtml({ initials: '', color: 'var(--ride)', ring: '#fff', car: true })
-        : pinHtml({ initials: sel.person.initials, color: sel.person.color, ring: STATUS_COLOR[sel.status], pulse: true }),
+        ? pinHtml({ initials: '', tone: 'safe', car: true, name: sel.person.short, chip: 'In ride' })
+        : pinHtml({ initials: sel.person.initials, tone: TONE[sel.status], name: sel.person.short, chip: sel.status === 'SAFE' ? 'Safe' : sel.status, pulse: true }),
     });
   }
+  if (active && sel.session && !sel.ride) {
+    markers.push({ id: 'dest', pos: sel.session.venuePos, html: destHtml(sel.session.venue, '· destination'), size: DEST_SIZE, anchor: DEST_ANCHOR, label: `Destination ${sel.session.venue}`, z: -200 });
+  }
   const trail = fadingTrail(sel.trail as [number, number][]);
-  const fit = sel.ride?.stage === 'trip' ? [sel.pos!] : sel.trail.length ? sel.trail : sel.pos ? [sel.pos] : [];
-  const viewKey = `${sel.person.id}-${active}-${w.beat}-${sel.ride?.stage ?? ''}-${sel.ride?.stage === 'trip' ? Math.floor(now / 8000) : ''}`;
+  const onTrip = sel.ride?.stage === 'trip' || sel.ride?.stage === 'arrived';
+  const fit = onTrip && sel.ride ? ridePositions(sel.ride, now).route : [...sel.trail, ...(sel.session && !sel.ride ? [sel.session.venuePos] : [])];
+  const viewKey = `${sel.person.id}-${active}-${w.beat}-${sel.session?.venue ?? ''}-${sel.ride?.stage ?? ''}`;
   const updates = filter === 'all' ? views.flatMap((v) => v.updates).sort((a, b) => b.ms - a.ms) : views.find((v) => v.person.id === filter)?.updates ?? [];
 
   return (
     <>
       <Header
         title="Map"
-        subtitle={`Looking after ${views.map((v) => v.person.short).join(', ')}`}
-        pill={<SessionPill active={active} onLabel={`${sel.person.short} is on a Night Out`} offLabel="No active session" />}
+        subtitle={`Watching over ${views.map((v) => v.person.short).join(', ')}`}
+        pill={<SessionPill active={active} label={active ? `Active: ${sel.person.short} is on a Night Out` : `Inactive: ${sel.person.short} isn't out`} />}
       />
       {urgent && (
         <button type="button" className={s.attention} onClick={() => set({ watcherSelected: urgent.person.id })} role="alert">
@@ -138,6 +143,7 @@ export function WatcherMap() {
           viewKey={viewKey}
           markers={markers}
           lines={active ? trail : []}
+          zoomControls
         />
         {active && (
           <span className={s.trailChip}>
@@ -149,11 +155,11 @@ export function WatcherMap() {
       <div className={s.scroll}>
         {active && sel.session ? (
           <section className={ui.card} aria-label="Current session">
-            <h2 className={s.cardTitle}>Current session</h2>
+            <h2 className={s.cardTitle}>Current Session</h2>
             <dl className={s.kv}>
               <dt>Duration</dt>
               <dd>
-                {fmtTime(sel.session.startMin)} – {fmtTime(sel.session.returnMin)} (est.)
+                {fmtTime(sel.session.startMin)} – {fmtTime(sel.session.returnMin)}
               </dd>
               <dt>Venue</dt>
               <dd>
@@ -169,8 +175,14 @@ export function WatcherMap() {
                   </span>
                 )}
               </dd>
+              <dt>Now</dt>
+              <dd>{fmtTime(nowMin(w, now))}</dd>
               <dt>Night Buddies</dt>
               <dd>{sel.buddies.map((b) => b.name).join(', ')}</dd>
+              <dt>Drinking pace</dt>
+              <dd>
+                <strong style={{ color: sel.pace === 'HIGH' ? 'var(--danger)' : sel.pace === 'MED' ? 'var(--warn)' : 'var(--safe)' }}>{sel.pace}</strong>
+              </dd>
               <dt>Well-Being</dt>
               <dd aria-live="assertive">
                 <StatusPill status={sel.status} />
@@ -190,7 +202,7 @@ export function WatcherMap() {
               <StatusPill status="OUT" />
             </span>
             <p>
-              {sel.person.short} isn't on a Night Out right now. You'll get a quiet update when {sel.person.id === 'ethan' ? 'he' : 'she'} starts one.
+              {sel.person.short} isn't on a Night Out right now. You'll get an update when {sel.person.id === 'ethan' ? 'he' : 'she'} starts one.
             </p>
             {sel.lastSession && <p className={cx(ui.muted, ui.small)}>{sel.lastSession}</p>}
           </section>
@@ -220,9 +232,6 @@ export function WatcherMap() {
             ))}
           </div>
         </section>
-        <p className={cx(ui.muted, ui.small)} style={{ textAlign: 'center' }}>
-          <MapPin size={13} aria-hidden style={{ verticalAlign: -2 }} /> Signed in as {HELEN.name} · location is only visible during a Night Out
-        </p>
       </div>
     </>
   );

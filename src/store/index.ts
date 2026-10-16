@@ -16,7 +16,19 @@ export interface Toast {
   tone: 'info' | 'safe' | 'warn' | 'danger';
 }
 
-const WORLD_KEY = 'safesip.world.v1';
+/**
+ * A logged drink's camera pair. `drink`/`selfie` are small thumbnails for lists;
+ * `drinkRecap`/`selfieRecap` are mid-size captures used by the end-of-night recap
+ * (optional so photos saved before this change still load).
+ */
+export interface PhotoPair {
+  drink: string;
+  selfie: string;
+  drinkRecap?: string;
+  selfieRecap?: string;
+}
+
+const WORLD_KEY = 'safesip.world.v2';
 const UI_KEY = 'safesip.ui.v1';
 const PHOTOS_KEY = 'safesip.photos.v1';
 
@@ -104,8 +116,9 @@ interface UiStore extends UiPersisted {
   ackEmergency: string | null;
   /** SOS flow closed with X: the alert stays active, the full-screen flow is hidden. */
   sosHiddenId: string | null;
-  photos: Record<string, { drink: string; selfie: string }>;
-  set: (p: Partial<UiStore>) => void;
+  /** Watcher's non-silent notification banner. */
+  notice: { id: string; title: string; body: string } | null;
+  photos: Record<string, PhotoPair>;  set: (p: Partial<UiStore>) => void;
   toast: (text: string, tone?: Toast['tone']) => void;
   login: (role: Role) => void;
   logout: () => void;
@@ -122,6 +135,7 @@ function initialParams() {
     role: role === 'user' || role === 'watcher' ? (role as Role) : undefined,
     room: room !== null ? normaliseRoom(room) : undefined,
     beat: q.get('beat'),
+    tab: q.get('tab'),
   };
 }
 
@@ -132,8 +146,9 @@ export const useUi = create<UiStore>((set, get) => ({
   role: startParams.role ?? persisted.role,
   room: startParams.room ?? persisted.room,
   authScreen: 'login',
-  userTab: 'map',
-  watcherTab: 'map',
+  // Deep link ?tab=map|buddies|drinks|me (User) or map|me (Watcher), for testing and screenshots.
+  userTab: (['map', 'buddies', 'drinks', 'me'].includes(startParams.tab ?? '') ? startParams.tab : 'map') as UserTab,
+  watcherTab: (startParams.tab === 'me' ? 'me' : 'map') as WatcherTab,
   modal: null,
   fullscreen: null,
   sheet: null,
@@ -143,6 +158,7 @@ export const useUi = create<UiStore>((set, get) => ({
   watcherSelected: 'chloe',
   ackEmergency: null,
   sosHiddenId: null,
+  notice: null,
   photos: load(PHOTOS_KEY, {}),
   set: (p) => set(p),
   toast: (text, tone = 'info') => {
@@ -159,16 +175,33 @@ useUi.subscribe((s) => {
   localStorage.setItem(UI_KEY, JSON.stringify(p));
 });
 
-export function savePhotos(id: string, drink: string, selfie: string) {
-  const photos = { ...useUi.getState().photos, [id]: { drink, selfie } };
-  // Keep only the newest 8 pairs so localStorage never overflows.
+// Mid-size recap images (~640px) are far smaller than full captures, so a night's worth fits.
+const PHOTO_CAP = 20;
+
+export function savePhotos(id: string, drink: string, selfie: string, drinkRecap?: string, selfieRecap?: string) {
+  const photos: Record<string, PhotoPair> = { ...useUi.getState().photos, [id]: { drink, selfie, drinkRecap, selfieRecap } };
+  // Keep only the newest pairs so localStorage never overflows.
   const keys = Object.keys(photos);
-  for (const k of keys.slice(0, Math.max(0, keys.length - 8))) delete photos[k];
+  for (const k of keys.slice(0, Math.max(0, keys.length - PHOTO_CAP))) delete photos[k];
   useUi.setState({ photos });
+  persistPhotos(photos);
+}
+
+/** Persist photos, shedding the oldest pair on quota errors so the newest still survive a reload. */
+function persistPhotos(photos: Record<string, PhotoPair>) {
+  let entries = Object.entries(photos);
+  while (entries.length > 0) {
+    try {
+      localStorage.setItem(PHOTOS_KEY, JSON.stringify(Object.fromEntries(entries)));
+      return;
+    } catch {
+      entries = entries.slice(1);
+    }
+  }
   try {
-    localStorage.setItem(PHOTOS_KEY, JSON.stringify(photos));
+    localStorage.removeItem(PHOTOS_KEY);
   } catch {
-    /* storage full: photos stay in memory for this session */
+    /* ignore */
   }
 }
 

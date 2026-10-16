@@ -23,8 +23,14 @@ export function useEventToasts() {
         if (!e.to.includes(role) || !e.text) continue;
         // The Watcher's emergency alerts get a full-screen takeover instead of a toast.
         if (role === 'watcher' && e.loud && e.tone === 'danger') continue;
+        if (role === 'watcher' && e.loud) {
+          // Non-silent notification (e.g. session start, change request 11): banner + sound, not a toast.
+          playChime();
+          vibrate([300, 150, 300]);
+          useUi.getState().set({ notice: { id: e.id, title: e.title ?? 'SafeSip', body: e.text } });
+          continue;
+        }
         if (role === 'watcher' && !e.loud && !useUi.getState().quietUpdates) continue;
-        if (role === 'watcher' && e.loud) playChime();
         useUi.getState().toast(e.text, e.tone);
       }
     });

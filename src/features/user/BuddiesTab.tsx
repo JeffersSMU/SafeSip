@@ -3,7 +3,7 @@ import { Avatar, Button, Header, StatusPill, cx, ui } from '../../components/ui'
 import { CONTACTS, personById } from '../../data/cast';
 import { useNow, useUi, useWorld } from '../../store';
 import { agoLabel, fmtDay } from '../../store/time';
-import { buddyBattery, buddyDistanceM, nowMin } from '../../store/world';
+import { buddyBattery, buddyView, nowMin } from '../../store/world';
 import { UserPill } from './common';
 import s from './user.module.css';
 
@@ -14,7 +14,8 @@ export function BuddiesTab() {
   const session = w.chloe.session;
   const inSession = session?.buddies ?? [];
   const rows = inSession.map((id) => ({ id, p: personById(id), b: w.buddies[id] })).filter((r) => r.b);
-  const safe = rows.filter((r) => r.b.withChloe).length;
+  const views = rows.map((r) => buddyView(w, r.id, now));
+  const safe = views.filter((v) => v.status === 'SAFE').length;
   const t = nowMin(w, now);
 
   return (
@@ -30,14 +31,14 @@ export function BuddiesTab() {
               <StatusPill status="MISSING" label="0 Missing" />
             </div>
             {rows.map(({ id, p, b }) => {
-              const d = Math.round(buddyDistanceM(w, id, now) / 5) * 5;
+              const v = buddyView(w, id, now);
               return (
                 <button key={id} type="button" className={s.buddyRow} onClick={() => set({ sheet: { kind: 'person', id } })}>
                   <Avatar person={p} size={48} />
                   <span className={s.buddyMain}>
                     <span className={s.buddyName}>
                       {p.name}
-                      <StatusPill status={b.withChloe ? 'SAFE' : 'APART'} label={b.withChloe ? 'With you' : `Apart · ${d} m`} />
+                      <StatusPill status={v.status} label={v.label} />
                     </span>
                     <span className={s.metaRow}>
                       <span>
@@ -74,9 +75,11 @@ export function BuddiesTab() {
               <Avatar person={c} size={42} />
               <span style={{ flex: 1, fontWeight: 650 }}>{c.name}</span>
               {session && (
-                <Button variant="text" onClick={() => set({ modal: 'edit', editPreset: { addBuddy: c.id } })}>
-                  <UserPlus size={18} /> Invite to session
-                </Button>
+                <div className={s.contactAction}>
+                  <Button variant="text" className={s.inviteBtn} onClick={() => set({ modal: 'edit', editPreset: { addBuddy: c.id } })}>
+                    <UserPlus size={18} /> Invite to Session
+                  </Button>
+                </div>
               )}
             </div>
           ))}

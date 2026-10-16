@@ -16,7 +16,7 @@ export function WatcherMe() {
 
   return (
     <>
-      <Header title="Your Profile" pill={<SessionPill active={anyActive} onLabel="Someone is on a Night Out" offLabel="No active session" />} />
+      <Header title="Your Profile" pill={<SessionPill active={anyActive} label={anyActive ? 'Active: someone you look after is on a Night Out' : 'Inactive: nobody is out'} />} />
       <div className={userCss.scroll} style={{ paddingBottom: 24 }}>
         <section className={cx(ui.card, userCss.profile)}>
           <Avatar person={HELEN} size={64} />
@@ -49,7 +49,7 @@ export function WatcherMe() {
               <ChevronRight size={18} aria-hidden />
             </button>
           ))}
-          <button type="button" className={s.lookRow} onClick={() => toast('They link to you when they add your number as Next-of-Kin')}>
+          <button type="button" className={s.lookRow} onClick={() => toast('Not implemented in this prototype')}>
             <span className={ui.iconBtn} aria-hidden>
               <Plus size={20} />
             </span>
@@ -68,8 +68,8 @@ export function WatcherMe() {
           >
             <Moon size={20} aria-hidden />
             <span className={userCss.setLabel}>
-              Quiet updates
-              <span className={userCss.setSub}>Session start, venue change, heading home, arrived</span>
+              Quiet Updates
+              <span className={userCss.setSub}>Includes venue changes, heading home, arrivals. Session starts and emergencies are excluded, and will always alert you.</span>
             </span>
             <span className={userCss.setValue} style={{ fontWeight: 700, color: quietUpdates ? 'var(--safe)' : undefined }}>
               {quietUpdates ? 'On' : 'Off'}
@@ -78,19 +78,19 @@ export function WatcherMe() {
           <div className={userCss.setRow}>
             <BellRing size={20} aria-hidden />
             <span className={userCss.setLabel}>
-              Emergency alerts
+              Emergency Alerts
               <span className={userCss.setSub}>Always on, sounds even on silent</span>
             </span>
             <span className={userCss.setValue}>🔒 On</span>
           </div>
           <div className={userCss.setRow}>
             <Users size={20} aria-hidden />
-            <span className={userCss.setLabel}>Linked users</span>
+            <span className={userCss.setLabel}>Linked Users</span>
             <span className={userCss.setValue}>{views.length}</span>
           </div>
         </div>
 
-        <Button variant="secondary" block onClick={logout}>
+        <Button variant="dangerOutline" block onClick={logout}>
           <LogOut size={18} /> Log out
         </Button>
       </div>

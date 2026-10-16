@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { MapPin, Siren, User } from 'lucide-react';
-import { BottomNav, Button, LinkButton, type NavItem } from '../../components/ui';
+import { Banner, BottomNav, Button, LinkButton, type NavItem } from '../../components/ui';
 import { useNow, useUi, useWorld, type WatcherTab } from '../../store';
 import { playAlarm, vibrate } from '../../app/sound';
 import { childView, linkedIds } from './children';
@@ -54,6 +54,34 @@ function EmergencyTakeover() {
   );
 }
 
+/** Non-silent notification banner (session start, "Chloe is safe"); auto-hides after 8 s. */
+function NoticeBanner() {
+  const notice = useUi((u) => u.notice);
+  const set = useUi((u) => u.set);
+  useEffect(() => {
+    if (!notice) return;
+    const id = window.setTimeout(() => set({ notice: null }), 8000);
+    return () => window.clearTimeout(id);
+  }, [notice, set]);
+  if (!notice) return null;
+  return (
+    <Banner
+      title={notice.title}
+      body={notice.body}
+      actions={
+        <>
+          <Button variant="secondary" onClick={() => set({ notice: null })}>
+            Dismiss
+          </Button>
+          <Button variant="primary" onClick={() => set({ notice: null, watcherTab: 'map' })}>
+            View
+          </Button>
+        </>
+      }
+    />
+  );
+}
+
 export function WatcherShell() {
   const tab = useUi((u) => u.watcherTab);
   const set = useUi((u) => u.set);
@@ -61,6 +89,7 @@ export function WatcherShell() {
     <div className={s.shell}>
       <main className={s.content}>{tab === 'map' ? <WatcherMap /> : <WatcherMe />}</main>
       <BottomNav items={NAV} value={tab} onChange={(k) => set({ watcherTab: k })} />
+      <NoticeBanner />
       <EmergencyTakeover />
     </div>
   );

@@ -134,16 +134,38 @@
   align-self: center;
   border-radius: 50%;
   background: var(--ride-soft);
+  display: grid;
+  place-items: center;
 }
-.radar span {
+/* Rotating radar sweep: a car being searched for while the ride is matched. */
+.radar::before {
+  content: '';
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 3px solid var(--ride);
-  animation: ss-ping 1.8s ease-out infinite;
+  background: conic-gradient(from 0deg, transparent 0deg 68%, color-mix(in srgb, var(--ride) 38%, transparent) 360deg);
+  animation: ss-sweep 1.6s linear infinite;
 }
-.radar span:last-child {
-  animation-delay: 0.9s;
+.radarCar {
+  position: relative;
+  color: var(--ride);
+  animation: ss-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ss-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ss-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.86);
+    opacity: 0.8;
+  }
 }
 .badges {
   display: flex;
@@ -198,4 +220,123 @@
   height: 100%;
   background: var(--ride);
   transition: width 0.3s linear;
+}
+
+
+/* ---------- compact booking panel (change request 15) ---------- */
+.mapTall {
+  min-height: 52%;
+}
+.panelCompact {
+  gap: 8px;
+  padding-top: 12px;
+  max-height: 48%;
+}
+.grabNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ride);
+  background: var(--ride-soft);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+.pointRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-size: 15px;
+}
+.amenityChips {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.amenityChips legend {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+  padding: 0;
+}
+.amenityChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.amenityChip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.amenityChip:focus-within {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.amenityChipOn {
+  border-color: var(--ride);
+  background: var(--ride-soft);
+  color: var(--ride);
+}
+.amenityChipOn::before {
+  content: '✓ ';
+  white-space: pre;
+}
+.fareLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.payChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+
+/* Booked-ride panel wrapper: lets SOS sit just above the panel without being clipped by its scroll. */
+.panelWrap {
+  position: relative;
+  z-index: 5;
+  margin-top: -18px;
+  max-height: 68%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panelWrap > .panel {
+  margin-top: 0;
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+.panelWrap .sosDock {
+  top: auto;
+  right: 16px;
+  bottom: calc(100% + 12px);
 }

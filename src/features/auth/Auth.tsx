@@ -49,7 +49,6 @@ function Field({ id, label, value, onChange, type = 'text', autoComplete }: { id
 function Login() {
   const { set, login, toast } = useUi.getState();
   // Pre-filled with Chloe's details to speed up recording (DESIGN §4.1). Nothing typed here is sent anywhere.
-  const [phone, setPhone] = useState(CHLOE.phone.replace('+65 ', ''));
   const [username, setUsername] = useState('chloe.tan');
   const [password, setPassword] = useState('nightout');
   const submit = (e: FormEvent) => {
@@ -60,12 +59,6 @@ function Login() {
   return (
     <form className={s.page} onSubmit={submit}>
       <Brand />
-      <div>
-        <PhoneField id="login-phone" value={phone} onChange={setPhone} />
-        <p className={s.hint} style={{ marginTop: 6 }}>
-          A one-time verification code will be sent via SMS
-        </p>
-      </div>
       <Field id="login-user" label="Username" value={username} onChange={setUsername} autoComplete="username" />
       <Field id="login-pass" label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
       <Button variant="text" className={s.forgot} onClick={() => toast('Password reset isn’t part of this prototype')}>

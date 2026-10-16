@@ -3,7 +3,7 @@ import { Button, Modal, cx } from '../../components/ui';
 import { CountdownRing } from '../../components/CountdownRing';
 import { SlideToConfirm } from '../../components/SlideToConfirm';
 import { personById } from '../../data/cast';
-import { dispatch, useNow, useWorld } from '../../store';
+import { dispatch, useNow, useUi, useWorld } from '../../store';
 import { CHECKIN_BUDDY_S, CHECKIN_NOK_S, CHECKIN_WARN_S, answerCheckInOk, checkInElapsedS, startSos } from '../../store/world';
 import s from './user.module.css';
 
@@ -44,11 +44,11 @@ export function CheckInModal() {
         <p className={cx(s.ciMsg, danger && s.ciMsgDanger)} aria-live="assertive">
           {msg}
         </p>
-        <Button variant="safe" block onClick={() => dispatch(answerCheckInOk)}>
+        <Button variant="safe" block onClick={() => dispatch((wd, n) => answerCheckInOk(wd, n, useUi.getState().checkInInterval))}>
           <CheckCircle2 size={22} /> I'm Okay
         </Button>
         <div style={{ width: '100%' }}>
-          <SlideToConfirm label="Slide for Need Help" onConfirm={() => dispatch((wd, n) => startSos(wd, 'checkin', n))} />
+          <SlideToConfirm label="Need Help (Slide right)" onConfirm={() => dispatch((wd, n) => startSos(wd, 'checkin', n))} />
         </div>
       </div>
     </Modal>

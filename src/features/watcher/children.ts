@@ -3,7 +3,9 @@
 
 import { CHLOE, DEMO_EXTRA_CHILD, LINKED_RELATIONSHIP, personById, type Person } from '../../data/cast';
 import type { LatLng } from '../../data/places';
+import type { Pace } from '../../data/drinks';
 import {
+  chloePace,
   chloePos,
   emergencyId,
   trail60,
@@ -29,6 +31,8 @@ export interface ChildView {
   emergency: string | null;
   updates: WorldEvent[];
   lastSession: string | null;
+  /** Drinking pace only: the Watcher never sees the drink log (change request 4). */
+  pace: Pace | null;
 }
 
 export function linkedIds(extraChild: boolean) {
@@ -50,6 +54,7 @@ export function childView(id: string, w: World, nowMs: number): ChildView {
       emergency: null,
       updates: [],
       lastSession: 'Last Night Out: Fri, 10 Oct · home safe 12:40 AM',
+      pace: null,
     };
   }
   const c = w.chloe;
@@ -68,6 +73,7 @@ export function childView(id: string, w: World, nowMs: number): ChildView {
     emergency: active ? emergencyId(c, nowMs) : null,
     updates: w.events.filter((e) => e.userId === CHLOE.id && e.to.includes('watcher')).reverse(),
     lastSession: c.lastSession,
+    pace: active ? chloePace(w, nowMs) : null,
   };
 }
 

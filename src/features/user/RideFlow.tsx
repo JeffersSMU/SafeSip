@@ -1,21 +1,35 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowLeft, Check, ChevronRight, CreditCard, MessageSquare, Phone, Share2, Star } from 'lucide-react';
+import { ArrowLeft, Car, Check, ChevronRight, CreditCard, Info, MessageSquare, Phone, Share2, Star } from 'lucide-react';
 import { MapView, homeHtml, pinHtml, venueHtml, type MapMarker, type MapViewTarget } from '../../components/MapView';
 import { Button, LinkButton, Modal, cx, ui } from '../../components/ui';
 import { CHLOE } from '../../data/cast';
-import { CHUPITOS, DRIVER_APPROACH, HOME, ROUTE_HOME, ROUTE_HOME_KM } from '../../data/places';
+import { DRIVER_APPROACH, DROPOFFS, PICKUPS, type RidePoint } from '../../data/places';
 import { AMENITY_INFO, BAND_LABEL, BASE_FARE, PER_KM, PER_MIN, PLATFORM_FEE, driversOffering, money, type Amenities } from '../../data/pricing';
 import { dispatch, useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
-import { ALL_AMENITIES, RIDE_STAGE_MS, arrangeOwnRide, bookRide, cancelRide, nowMin, quoteNow, ridePositions, type Ride } from '../../store/world';
+import {
+  ALL_AMENITIES,
+  RIDE_STAGE_MS,
+  bookRide,
+  cancelRide,
+  dropById,
+  nowMin,
+  pickupById,
+  quoteNow,
+  rideKm,
+  ridePositions,
+  rideRoute,
+  type Ride,
+} from '../../store/world';
+import { SosFab } from './common';
 import r from './ride.module.css';
 import s from './user.module.css';
 
 const DRIVER = { name: 'Ahmad R.', rating: 4.9, car: 'Toyota Prius', plate: 'SMB1234X', phone: '+65 8123 4567' };
 
-function FareSheet({ amenities, onClose }: { amenities: Amenities; onClose: () => void }) {
+function FareSheet({ amenities, km, onClose }: { amenities: Amenities; km: number; onClose: () => void }) {
   const w = useWorld((x) => x.world);
-  const q = quoteNow(w, amenities);
+  const q = quoteNow(w, amenities, km);
   const rows: [string, string][] = [
     ['Base fare', money(BASE_FARE)],
     [`Distance ${q.km} km × ${money(PER_KM)}`, money(PER_KM * q.km)],
@@ -39,9 +53,6 @@ function FareSheet({ amenities, onClose }: { amenities: Amenities; onClose: () =
           <dd>{money(q.total)}</dd>
         </div>
       </dl>
-      <p className={cx(ui.muted, ui.small)} style={{ marginTop: 12 }}>
-        Time bands follow LTA's taxi peak and late-night surcharge periods. Rates are a realistic estimate based on public reports of Grab's Singapore pricing, not Grab's actual formula.
-      </p>
     </Modal>
   );
 }
@@ -60,7 +71,33 @@ function PaymentSheet({ onClose }: { onClose: () => void }) {
   );
 }
 
-function RideHeader({ title, onBack }: { title: string; onBack?: () => void }) {
+/** Pick a pickup or drop-off point from the hardcoded list (change request 15). */
+function PointSheet({ title, points, value, onPick, onClose }: { title: string; points: RidePoint[]; value: string; onPick: (id: string) => void; onClose: () => void }) {
+  return (
+    <Modal title={title} onClose={onClose} zIndex={70}>
+      {points.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          className={s.setRow}
+          aria-pressed={p.id === value}
+          onClick={() => {
+            onPick(p.id);
+            onClose();
+          }}
+        >
+          <span className={s.setLabel}>
+            {p.name}
+            <span className={s.setSub}>{p.area}</span>
+          </span>
+          {p.id === value && <Check size={20} color="var(--brand)" aria-label="selected" />}
+        </button>
+      ))}
+    </Modal>
+  );
+}
+
+function RideHeader({ title, onBack, partner = true }: { title: string; onBack?: () => void; partner?: boolean }) {
   return (
     <div className={s.fullHead}>
       {onBack && (
@@ -69,7 +106,7 @@ function RideHeader({ title, onBack }: { title: string; onBack?: () => void }) {
         </button>
       )}
       <h1 className={s.fullTitle}>{title}</h1>
-      <span className={r.partner}>SafeSip Ride · in partnership with Grab</span>
+      {partner}
     </div>
   );
 }
@@ -79,83 +116,82 @@ function Quote() {
   const set = useUi((u) => u.set);
   useNow(5000);
   const [am, setAm] = useState<Amenities>(ALL_AMENITIES);
-  const [sheet, setSheet] = useState<'fare' | 'pay' | null>(null);
-  const q = quoteNow(w, am);
+  const [pickupId, setPickupId] = useState('chupitos');
+  const [dropId, setDropId] = useState('home');
+  const [sheet, setSheet] = useState<'fare' | 'pay' | 'pickup' | 'drop' | null>(null);
+  const km = rideKm(pickupId, dropId);
+  const q = quoteNow(w, am, km);
+  const pick = pickupById(pickupId);
+  const drop = dropById(dropId);
+  const route = rideRoute(pickupId, dropId);
   const close = () => set({ fullscreen: null });
+  const ticked = AMENITY_INFO.filter((a) => am[a.key]).length;
   const markers: MapMarker[] = [
-    { id: 'pick', pos: CHUPITOS, html: venueHtml('Pickup · Chupitos'), size: [1, 1], anchor: [0, 0], label: 'Pickup Chupitos' },
-    { id: 'drop', pos: HOME, html: homeHtml(), size: [28, 28], anchor: [14, 14], label: 'Home, Yishun' },
+    { id: 'pick', pos: pick.pos, html: venueHtml(`Pickup · ${pick.name}`), size: [1, 1], anchor: [0, 0], label: `Pickup ${pick.name}` },
+    { id: 'drop', pos: drop.pos, html: homeHtml(), size: [28, 28], anchor: [14, 14], label: `Drop-off ${drop.name}` },
   ];
   return (
     <div className={s.full}>
-      <RideHeader title="Get Home Safely" onBack={close} />
-      <div className={r.map}>
-        <MapView target={{ fit: ROUTE_HOME, maxZoom: 13 }} viewKey="quote" markers={markers} lines={[{ id: 'route', points: ROUTE_HOME, color: '#00A651' }]} />
+      <RideHeader title="Get Home Safely" onBack={close} partner={false} />
+      <div className={cx(r.map, r.mapTall)}>
+        <MapView attribution="top-left" target={{ fit: route, maxZoom: 15 }} viewKey={`quote-${pickupId}-${dropId}`} markers={markers} zoomControls lines={[{ id: 'route', points: route, color: '#00A651' }]} />
       </div>
-      <div className={r.panel}>
-        <div className={r.routeRow}>
+      <div className={cx(r.panel, r.panelCompact)}>
+        <p className={r.grabNote}>
+          <Info size={14} aria-hidden /> SafeSip is partnered with Grab™ to deliver a safe and reliable ride back home
+        </p>
+        <button type="button" className={r.pointRow} onClick={() => setSheet('pickup')} aria-label={`Pickup ${pick.name}. Change pickup point`}>
           <span className={r.routeDot} style={{ background: 'var(--ride)' }} aria-hidden />
-          <span>
-            <strong>Chupitos</strong> <span className={ui.muted}>· Clarke Quay</span>
+          <span style={{ flex: 1 }}>
+            <strong>{pick.name}</strong> <span className={ui.muted}>· {pick.area}</span>
           </span>
-        </div>
-        <div className={r.routeRow}>
+          <span className={r.link}>Change</span>
+        </button>
+        <button type="button" className={r.pointRow} onClick={() => setSheet('drop')} aria-label={`Drop-off ${drop.name}. Change drop-off point`}>
           <span className={r.routeDot} style={{ background: 'var(--text)' }} aria-hidden />
-          <span>
-            <strong>Home</strong> <span className={ui.muted}>· Yishun</span>
+          <span style={{ flex: 1 }}>
+            <strong>{drop.name}</strong> <span className={ui.muted}>· {drop.area}</span>
           </span>
           <span className={r.routeMeta}>
-            {ROUTE_HOME_KM} km · {q.minutes} min
+            {km} km · {q.minutes} min
           </span>
-        </div>
+          <span className={r.link}>Change</span>
+        </button>
 
-        <fieldset className={r.amenities}>
-          <legend>Care amenities</legend>
+        <fieldset className={r.amenityChips}>
+          <legend>
+            Care amenities <span className={ui.muted}>· {driversOffering(am)} drivers {ticked ? (ticked === 3 ? 'offer all 3' : 'offer these') : 'nearby'}</span>
+          </legend>
           {AMENITY_INFO.map((a) => (
-            <label key={a.key} className={r.amenity}>
+            <label key={a.key} className={cx(r.amenityChip, am[a.key] && r.amenityChipOn)}>
               <input type="checkbox" checked={am[a.key]} onChange={(e) => setAm({ ...am, [a.key]: e.target.checked })} />
-              <span style={{ flex: 1 }}>{a.label}</span>
-              <span className={ui.muted}>+{money(a.price)}</span>
+              {a.label} +{money(a.price)}
             </label>
           ))}
-          <p className={cx(ui.muted, ui.small)}>
-            {driversOffering(am)} drivers nearby{' '}
-            {AMENITY_INFO.filter((a) => am[a.key]).length ? `offer ${AMENITY_INFO.filter((a) => am[a.key]).length === 3 ? 'all 3' : 'these'}` : 'available'}
-          </p>
         </fieldset>
 
-        <button type="button" className={r.fareRow} onClick={() => setSheet('fare')} aria-label={`Fare ${money(q.total)}. Show fare details`}>
-          <span>
-            <span className={r.fare}>{money(q.total)}</span>
-            <span className={cx(ui.muted, ui.small)} style={{ display: 'block' }}>
-              Upfront fare · {q.band === 'late' ? 'late-night ×1.5' : q.band === 'peak' ? 'peak ×1.25' : 'standard'}
+        <div className={r.fareLine}>
+          <button type="button" className={r.fareRow} onClick={() => setSheet('fare')} aria-label={`Fare ${money(q.total)}. Show fare details`}>
+            <span>
+              <span className={r.fare}>{money(q.total)}</span>
+              <span className={cx(ui.muted, ui.small)} style={{ display: 'block' }}>
+                Upfront · {q.band === 'late' ? 'late-night ×1.5' : q.band === 'peak' ? 'peak ×1.25' : 'standard'} <ChevronRight size={12} aria-hidden style={{ verticalAlign: -1 }} />
+              </span>
             </span>
-          </span>
-          <span className={r.link}>
-            Fare details <ChevronRight size={16} />
-          </span>
-        </button>
-        <button type="button" className={r.payRow} onClick={() => setSheet('pay')}>
-          <CreditCard size={20} aria-hidden /> <span style={{ flex: 1 }}>Visa •••• 4321</span>
-          <ChevronRight size={18} aria-hidden />
-        </button>
+          </button>
+          <button type="button" className={r.payChip} onClick={() => setSheet('pay')}>
+            <CreditCard size={16} aria-hidden /> Visa •••• 4321 <ChevronRight size={14} aria-hidden />
+          </button>
+        </div>
 
-        <Button variant="ride" block onClick={() => dispatch((wd, n) => bookRide(wd, am, n))} disabled={!w.chloe.session}>
-          Book SafeSip Ride
-        </Button>
-        <Button
-          variant="secondary"
-          block
-          onClick={() => {
-            dispatch(arrangeOwnRide);
-            close();
-          }}
-        >
-          Arrange my own ride
+        <Button variant="ride" block onClick={() => dispatch((wd, n) => bookRide(wd, am, n, pickupId, dropId))} disabled={!w.chloe.session}>
+          Book Ride
         </Button>
       </div>
-      {sheet === 'fare' && <FareSheet amenities={am} onClose={() => setSheet(null)} />}
+      {sheet === 'fare' && <FareSheet amenities={am} km={km} onClose={() => setSheet(null)} />}
       {sheet === 'pay' && <PaymentSheet onClose={() => setSheet(null)} />}
+      {sheet === 'pickup' && <PointSheet title="Pickup point" points={PICKUPS} value={pickupId} onPick={setPickupId} onClose={() => setSheet(null)} />}
+      {sheet === 'drop' && <PointSheet title="Drop-off point" points={DROPOFFS} value={dropId} onPick={setDropId} onClose={() => setSheet(null)} />}
     </div>
   );
 }
@@ -204,33 +240,44 @@ function Booked({ ride }: { ride: Ride }) {
   const [confirmCancel, setConfirmCancel] = useState(false);
   const pos = ridePositions(ride, now);
   const t = nowMin(w, now);
+  const pick = pickupById(ride.pickupId);
+  const drop = dropById(ride.dropId);
   const cancel = () => {
     dispatch(cancelRide);
     set({ fullscreen: 'rideQuote' });
     setConfirmCancel(false);
   };
 
+  const onTrip = ride.stage === 'trip' || ride.stage === 'arrived';
   const markers: MapMarker[] = [];
-  const lines = [{ id: 'route', points: ROUTE_HOME, color: '#00A651', opacity: 0.35 }];
-  if (ride.stage === 'trip') lines.push({ id: 'done', points: pos.path, color: '#00A651', opacity: 1 });
-  markers.push({ id: 'home', pos: HOME, html: homeHtml(), size: [28, 28], anchor: [14, 14], label: 'Home' });
-  if (ride.stage !== 'trip') markers.push({ id: 'me', pos: CHUPITOS, html: pinHtml({ initials: CHLOE.initials, color: CHLOE.color, ring: 'var(--safe)' }), label: 'You' });
-  if (ride.stage !== 'matching') markers.push({ id: 'car', pos: pos.car, html: pinHtml({ initials: '', color: 'var(--ride)', ring: '#fff', car: true }), label: 'Driver', z: 1000 });
+  const lines = [{ id: 'route', points: pos.route, color: '#00A651', opacity: 0.35 }];
+  if (onTrip) lines.push({ id: 'done', points: pos.path, color: '#00A651', opacity: 1 });
+  markers.push({ id: 'drop', pos: drop.pos, html: homeHtml(), size: [28, 28], anchor: [14, 14], label: drop.name });
+  if (!onTrip) markers.push({ id: 'me', pos: pick.pos, html: pinHtml({ self: true, initials: CHLOE.initials, tone: 'safe', name: 'You · pickup' }), label: 'You' });
+  if (ride.stage !== 'matching')
+    markers.push({
+      id: 'car',
+      pos: pos.car,
+      html: pinHtml({ initials: '', tone: 'safe', car: true, name: onTrip ? 'You · on your way' : DRIVER.name, chip: DRIVER.plate }),
+      label: 'Driver',
+      z: 1000,
+    });
 
-  const target: MapViewTarget = ride.stage === 'trip' ? { center: pos.car, zoom: 14 } : { fit: [...DRIVER_APPROACH, CHUPITOS], maxZoom: 17 };
-  const viewKey = ride.stage === 'trip' ? `trip-${Math.floor(pos.progress * 10)}` : ride.stage;
+  // On the way home the whole journey stays in view (change request 16).
+  const target: MapViewTarget = onTrip ? { fit: pos.route, maxZoom: 15 } : { fit: [...DRIVER_APPROACH.slice(0, -1), pick.pos], maxZoom: 17 };
+  const viewKey = onTrip ? `trip-${ride.id}` : `${ride.stage}-${ride.id}`;
 
-  const stageMin = (ride.pickupMin - t);
+  const stageMin = ride.pickupMin - t;
+  const where = drop.id === 'home' ? 'home' : drop.name;
   let title = '';
   let body: ReactNode = null;
   switch (ride.stage) {
     case 'matching':
-      title = 'Finding your driver…';
+      title = 'Finding a driver…';
       body = (
         <>
           <div className={r.radar} aria-hidden>
-            <span />
-            <span />
+            <Car className={r.radarCar} size={40} />
           </div>
           <div className={r.badges} style={{ justifyContent: 'center' }}>
             {AMENITY_INFO.filter((a) => ride.amenities[a.key]).map((a) => (
@@ -240,7 +287,7 @@ function Booked({ ride }: { ride: Ride }) {
             ))}
           </div>
           <p className={ui.muted} style={{ textAlign: 'center' }}>
-            Matching drivers who offer your care amenities · {money(ride.fare.total)}
+            Matching Grab drivers who offer your care amenities...
           </p>
           <Button variant="secondary" block onClick={cancel}>
             Cancel
@@ -256,7 +303,7 @@ function Booked({ ride }: { ride: Ride }) {
           <p className={r.eta}>
             Arriving in {Math.max(1, Math.ceil(stageMin))} min{' '}
             <span className={cx(ui.muted, ui.small)} style={{ fontWeight: 500 }}>
-              · pickup {fmtTime(ride.pickupMin)} at Chupitos
+              · pickup {fmtTime(ride.pickupMin)} at {pick.name}
             </span>
           </p>
           <DriverCard ride={ride} onCancel={() => setConfirmCancel(true)} />
@@ -270,10 +317,12 @@ function Booked({ ride }: { ride: Ride }) {
       break;
     case 'trip':
     case 'arrived':
-      title = 'On your trip';
+      title = `On your way ${drop.id === 'home' ? 'home' : `to ${drop.name}`}`;
       body = (
         <>
-          <p className={r.eta}>Arriving home ~{fmtTime(ride.etaMin)}</p>
+          <p className={r.eta}>
+            Arriving {where} ~{fmtTime(ride.etaMin)}
+          </p>
           <div className={r.progress} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pos.progress * 100)} aria-label="Trip progress">
             <span style={{ width: `${pos.progress * 100}%` }} />
           </div>
@@ -292,10 +341,14 @@ function Booked({ ride }: { ride: Ride }) {
     <div className={s.full}>
       <RideHeader title={title} />
       <div className={r.map}>
-        <MapView target={target} viewKey={viewKey} markers={markers} lines={ride.stage === 'trip' ? lines : []} />
+        <MapView attribution="top-left" target={target} viewKey={viewKey} markers={markers} zoomControls lines={onTrip ? lines : []} insets={{ top: 10, bottom: 20 }} />
       </div>
-      <div className={r.panel} aria-live="polite">
-        {body}
+      <div className={r.panelWrap}>
+        {/* SOS sits bottom-right just above the info panel for every booked stage (change request 7). */}
+        <SosFab className={r.sosDock} />
+        <div className={r.panel} aria-live="polite">
+          {body}
+        </div>
       </div>
       {confirmCancel && (
         <Modal title="Cancel this booking?" onClose={() => setConfirmCancel(false)} zIndex={70}>

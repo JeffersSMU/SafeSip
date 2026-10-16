@@ -58,10 +58,10 @@ const MINS = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')
 const AMPM = ['AM', 'PM'];
 
 /**
- * Wheel time picker (heuristic G3). Value is minutes past midnight of the *night* in 5-minute steps;
- * AM times are treated as after midnight (next day), matching a night out.
+ * Wheel time picker (heuristic G3). Value is a time of day in minutes (0–1439), 5-minute steps.
+ * The date is chosen separately, so 2:00 AM tomorrow is "Tomorrow" + 2:00 AM.
  */
-export function TimeWheel({ value, onChange }: { value: number; onChange: (simMin: number) => void }) {
+export function TimeWheel({ value, onChange }: { value: number; onChange: (minuteOfDay: number) => void }) {
   const m = ((value % 1440) + 1440) % 1440;
   const h24 = Math.floor(m / 60);
   const hIdx = (h24 % 12 === 0 ? 12 : h24 % 12) - 1;
@@ -70,8 +70,7 @@ export function TimeWheel({ value, onChange }: { value: number; onChange: (simMi
   const emit = (hi: number, mi: number, pi: number) => {
     const h12 = hi + 1;
     const h = (h12 % 12) + (pi === 1 ? 12 : 0);
-    const mins = h * 60 + mi * 5;
-    onChange(pi === 0 ? 1440 + mins : mins);
+    onChange(h * 60 + mi * 5);
   };
   return (
     <div className={s.wheel}>

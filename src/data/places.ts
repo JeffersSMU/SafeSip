@@ -9,6 +9,8 @@ export const CHUPITOS: LatLng = [1.2907, 103.8468];
 export const CLARKE_QUAY_MRT: LatLng = [1.2886, 103.8465];
 /** Where Sarah waits in the restroom queue at B5 (~40 m from Chupitos). */
 export const RESTROOM: LatLng = [1.29106, 103.84693];
+/** Sarah's home (Toa Payoh), where she starts at B1 before heading to Zouk. */
+export const SARAH_HOME: LatLng = [1.3343, 103.8563];
 
 /** Pre-computed OSRM driving polyline Chupitos -> Yishun (one-off export, [lat, lng]). */
 export const ROUTE_HOME: LatLng[] = routeJson as LatLng[];
@@ -33,6 +35,43 @@ export const VENUES: Venue[] = [
 
 export const venuePos = (name: string): LatLng =>
   VENUES.find((v) => v.name.toLowerCase() === name.toLowerCase())?.pos ?? CHUPITOS;
+
+/** Nearest listed venue to a point (used for "Select from map" and venue-change detection). */
+export function nearestVenue(p: LatLng): { venue: Venue; m: number } {
+  let best = VENUES[0];
+  let bestM = Infinity;
+  for (const v of VENUES) {
+    const m = distanceM(p, v.pos);
+    if (m < bestM) {
+      best = v;
+      bestM = m;
+    }
+  }
+  return { venue: best, m: bestM };
+}
+
+export interface RidePoint {
+  id: string;
+  name: string;
+  area: string;
+  pos: LatLng;
+  /** Extra km versus the scenario route (Chupitos -> Home), hardcoded. */
+  dKm: number;
+}
+
+/** Hardcoded pickup choices on the "Get Home Safely" screen. */
+export const PICKUPS: RidePoint[] = [
+  { id: 'chupitos', name: 'Chupitos', area: 'Clarke Quay · your location', pos: CHUPITOS, dKm: 0 },
+  { id: 'zouk', name: 'Zouk', area: '3C River Valley Rd', pos: ZOUK, dKm: 0.1 },
+  { id: 'cq-mrt', name: 'Clarke Quay MRT', area: 'Exit E', pos: CLARKE_QUAY_MRT, dKm: 0.3 },
+];
+
+/** Hardcoded drop-off choices. */
+export const DROPOFFS: RidePoint[] = [
+  { id: 'home', name: 'Home', area: 'Yishun', pos: HOME, dKm: 0 },
+  { id: 'yishun-mrt', name: 'Yishun MRT', area: 'Yishun Ave 2', pos: [1.4294, 103.8351], dKm: -0.6 },
+  { id: 'sarah', name: "Sarah's place", area: 'Toa Payoh', pos: SARAH_HOME, dKm: -13.1 },
+];
 
 /** Distance in metres between two points (haversine). */
 export function distanceM(a: LatLng, b: LatLng): number {

@@ -66,9 +66,6 @@ p {
   isolation: isolate;
   z-index: 0;
 }
-.leaflet-control-attribution {
-  font-size: 10px;
-}
 .leaflet-div-icon {
   background: none;
   border: none;
@@ -78,49 +75,185 @@ p {
   filter: grayscale(0.85) brightness(1.06) contrast(0.92);
 }
 
-/* Avatar map pins (rendered as Leaflet divIcons, so global rather than module classes). */
-.ss-pin {
+/* Map pins (Leaflet divIcons, so global rather than module classes). Icon box 150x80, tip at (75,50);
+   with --top the label sits above and the tip is at (75,72). */
+.ss-mk {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 150px;
+  height: 80px;
+  --c: var(--safe);
 }
-.ss-pin__disc {
+.ss-mk--apart {
+  --c: var(--warn);
+}
+.ss-mk--missing,
+.ss-mk--sos {
+  --c: var(--danger);
+}
+.ss-mk--brand {
+  --c: var(--brand);
+}
+.ss-mk__pin {
   position: absolute;
-  inset: 0;
-  border-radius: 50%;
+  left: 56px;
+  top: 4px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--c);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 10px rgba(20, 20, 31, 0.28);
   display: grid;
   place-items: center;
+}
+.ss-mk__txt {
+  transform: rotate(45deg);
   color: #fff;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 15px;
-  border: 3px solid #fff;
-  box-shadow: 0 0 0 3px var(--ring, var(--safe)), 0 4px 10px rgba(0, 0, 0, 0.25);
 }
-.ss-pin__batt {
+.ss-mk__badge {
   position: absolute;
-  right: -10px;
-  bottom: -6px;
+  left: 86px;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   background: #fff;
-  color: var(--text);
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 5px;
-  border-radius: 999px;
-  box-shadow: var(--shadow-1);
+  color: var(--c);
+  font-size: 11px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 4px rgba(20, 20, 31, 0.25);
 }
-.ss-pin--pulse::after {
+.ss-mk__label {
+  position: absolute;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  background: #fff;
+  border-radius: 8px;
+  padding: 3px 4px 3px 7px;
+  font-size: 12px;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(20, 20, 31, 0.16);
+}
+.ss-mk__chip {
+  background: color-mix(in srgb, var(--c) 14%, #fff);
+  color: var(--c);
+  font-weight: 750;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.ss-mk--pulse::before {
   content: '';
   position: absolute;
-  inset: -8px;
+  left: 51px;
+  top: 20px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  border: 2px solid var(--ring, var(--safe));
-  animation: ss-ping 2s ease-out infinite;
+  background: color-mix(in srgb, var(--c) 22%, transparent);
+  animation: ss-ping 2.2s ease-out infinite;
 }
-.ss-pin--car .ss-pin__disc {
-  background: var(--ride) !important;
-  font-size: 20px;
+.ss-mk--top .ss-mk__pin {
+  top: 26px;
 }
-.ss-venue {
+.ss-mk--top .ss-mk__badge {
+  top: 22px;
+}
+.ss-mk--top .ss-mk__label {
+  top: 0;
+}
+.ss-mk--top.ss-mk--pulse::before {
+  top: 42px;
+}
+.ss-mk--car .ss-mk__pin {
+  border-radius: 50%;
+  background: var(--ride);
+}
+.ss-mk--car .ss-mk__txt {
+  font-size: 18px;
+}/* The user's own pin: a larger round avatar in brand violet with a status-coloured halo, so "you"
+   never looks like a buddy's teardrop pin (change request 8). Same 150x80 box, centre at (75,50). */
+.ss-mk--self .ss-mk__pin {
+  left: 53px;
+  top: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transform: none;
+  background: var(--brand);
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px var(--c), 0 6px 14px rgba(91, 61, 245, 0.45);
+}
+.ss-mk--self .ss-mk__txt {
+  transform: none;
+  font-size: 14px;
+}
+.ss-mk--self .ss-mk__badge {
+  left: 88px;
+  top: 24px;
+}
+.ss-mk--self .ss-mk__label {
+  top: 0;
+  background: var(--brand);
+  color: #fff;
+}
+.ss-mk--self .ss-mk__chip {
+  background: #fff;
+}
+.ss-mk--self.ss-mk--pulse::before {
+  left: 45px;
+  top: 20px;
+  width: 60px;
+  height: 60px;
+}
+
+/* Target / meet-up point flag. Box 150x64, flag foot at (75,58). */
+.ss-dest {
+  position: relative;
+  width: 150px;
+  height: 64px;
+}
+.ss-dest__cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 8px rgba(20, 20, 31, 0.2);
+}
+.ss-dest__flag {
+  position: absolute;
+  left: 66px;
+  top: 24px;
+  font-size: 22px;
+  line-height: 1;
+}
+.ss-dest__dot {
+  position: absolute;
+  left: 69px;
+  top: 52px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(20, 20, 31, 0.12);
+}.ss-venue {
   background: var(--text);
   color: #fff;
   font-size: 12px;
@@ -185,7 +318,7 @@ p {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
-  .ss-pin--pulse::after {
+  .ss-mk--pulse::before {
     display: none;
   }
 }

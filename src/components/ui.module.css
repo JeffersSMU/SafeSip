@@ -74,13 +74,24 @@
 
 /* ---------- header ---------- */
 .header {
-  padding: calc(14px + var(--safe-top)) 20px 10px;
+  padding: calc(12px + var(--safe-top)) 16px 10px 20px;
   background: var(--bg);
   display: flex;
   flex-direction: column;
   gap: 8px;
   position: relative;
   z-index: 5;
+}
+.headerSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex: none;
+  max-width: 60%;
+}
+.headerSide .sessionPill {
+  align-self: flex-end;
 }
 .headerRow {
   display: flex;
@@ -297,7 +308,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  animation: slideDown 0.22s ease-out;
+  /* Fades in, holds, then fades out. Duration matches the store's 3200ms auto-dismiss. */
+  animation: toastFade 3.2s ease-in-out both;
 }
 .toast_safe svg {
   color: #4ade80;
@@ -312,6 +324,24 @@
   from {
     transform: translateY(-16px);
     opacity: 0;
+  }
+}
+@keyframes toastFade {
+  0% {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  8% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  88% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px);
   }
 }
 

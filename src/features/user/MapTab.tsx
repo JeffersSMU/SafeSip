@@ -1,13 +1,20 @@
-import { Car, Clock, MapPin, Pencil, Power } from 'lucide-react';
-import { MapView, homeHtml, pinHtml, venueHtml, type MapMarker } from '../../components/MapView';
-import { Button, Header, STATUS_COLOR, cx } from '../../components/ui';
+import { AlertTriangle, CheckCircle2, Home, MapPin, ShieldAlert } from 'lucide-react';
+import { DEST_ANCHOR, DEST_SIZE, MapView, PIN_ANCHOR_TOP, destHtml, homeHtml, pinHtml, type MapMarker, type PinTone } from '../../components/MapView';
+import { Button, Header } from '../../components/ui';
 import { CHLOE, personById } from '../../data/cast';
-import { HOME, venuePos } from '../../data/places';
+import { HOME, distanceM } from '../../data/places';
 import { useNow, useUi, useWorld } from '../../store';
-import { fmtDuration, fmtTime } from '../../store/time';
-import { chloeBattery, buddyBattery, chloePos, nowMin, userWellbeing } from '../../store/world';
-import { UserPill, openRide } from './common';
+import { fmtTime } from '../../store/time';
+import { buddyBattery, buddyView, chloeBattery, chloePos, nowMin, trail60, userWellbeing, type Wellbeing } from '../../store/world';
+import { UserPill } from './common';
 import s from './user.module.css';
+
+const TONE: Record<Wellbeing, PinTone> = { SAFE: 'safe', APART: 'apart', MISSING: 'missing', SOS: 'sos' };
+const WORD: Record<Wellbeing, string> = { SAFE: 'Safe', APART: 'Apart', MISSING: 'Missing', SOS: 'SOS' };
+
+/** Space the overlays cover, so fitting keeps pins visible. */
+const INSETS_ACTIVE = { top: 48, bottom: 170 };
+const INSETS_IDLE = { top: 48, bottom: 80 };
 
 export function MapTab() {
   const now = useNow(1000);
@@ -16,86 +23,113 @@ export function MapTab() {
   const c = w.chloe;
   const session = c.session;
   const me = chloePos(w, now);
-  const status = userWellbeing(w, now);
+  const myStatus = userWellbeing(w, now);
+  const t = nowMin(w, now);
 
+  const people: Wellbeing[] = [];
   const markers: MapMarker[] = [];
   if (session) {
-    const vp = venuePos(session.venue);
-    markers.push({ id: 'venue', pos: vp, html: venueHtml(session.venue), size: [1, 1], anchor: [0, 0], label: `Venue ${session.venue}`, z: -100 });
+    // Target / meet-up point (B1) and the new destination after an edit (B3). Hidden once she's there.
+    const atTarget = distanceM(me, session.venuePos) < 40;
+    const caption = session.venues.length > 1 ? '· new destination' : '· meet-up point';
+    if (!atTarget)
+      markers.push({ id: `dest-${session.venue}`, pos: session.venuePos, html: destHtml(session.venue, caption), size: DEST_SIZE, anchor: DEST_ANCHOR, label: `${session.venue} ${caption.replace('· ', '')}`, z: -200 });
     for (const id of session.buddies) {
       const b = w.buddies[id];
       if (!b) continue;
       const p = personById(id);
+      const v = buddyView(w, id, now);
+      people.push(v.status);
+      // A buddy close to Chloe gets its label above the pin, so the two labels never overlap.
+      const close = v.d < 90;
+      // Buddy chip: no distance — "with you", "On the way", or just the status word.
+      const chip = b.withChloe ? `${WORD[v.status]} · with you` : b.enRoute ? 'On the way' : WORD[v.status];
       markers.push({
         id,
         pos: b.pos,
-        label: `${p.name}, ${b.withChloe ? 'safe' : 'apart'}`,
-        html: pinHtml({ initials: p.initials, color: p.color, ring: b.withChloe ? STATUS_COLOR.SAFE : STATUS_COLOR.APART, battery: buddyBattery(w, now) }),
+        anchor: close ? PIN_ANCHOR_TOP : undefined,
+        label: `${p.name}, ${v.label}, battery ${buddyBattery(w, now)}%`,
+        html: pinHtml({ initials: p.initials, tone: TONE[v.status], name: `${p.short} · ${buddyBattery(w, now)}%`, chip, labelTop: close }),
         onClick: () => set({ sheet: { kind: 'person', id } }),
       });
     }
-  } else {
+    people.push(myStatus);
+  }
+  if (!session || distanceM(me, HOME) > 50) {
     markers.push({ id: 'home', pos: HOME, html: homeHtml(), size: [28, 28], anchor: [14, 14], label: 'Home', z: -100 });
   }
   markers.push({
     id: 'me',
     pos: me,
-    label: `You, ${status.toLowerCase()}`,
     z: 1000,
-    html: pinHtml({ initials: CHLOE.initials, color: CHLOE.color, ring: session ? STATUS_COLOR[status] : '#ffffff', battery: chloeBattery(w, now), pulse: !!session }),
+    label: `You, ${session ? WORD[myStatus] : 'no session'}, battery ${chloeBattery(w, now)}%`,
+    html: pinHtml({
+      self: true,
+      initials: CHLOE.initials,
+      tone: session ? TONE[myStatus] : 'brand',
+      name: `You · ${chloeBattery(w, now)}%`,
+      chip: session ? WORD[myStatus] : undefined,
+      pulse: !!session,
+    }),
     onClick: () => set({ sheet: { kind: 'person', id: 'chloe' } }),
   });
 
-  const fit = session ? markers.filter((m) => m.id !== 'venue').map((m) => m.pos) : [me];
-  const viewKey = `${!!session}-${me[0].toFixed(4)}-${w.beat}-${session?.buddies.map((b) => w.buddies[b]?.withChloe).join()}`;
-  const now_ = nowMin(w, now);
+  const trail = session ? trail60(w, now) : [];
+  const fit = session ? markers.filter((m) => m.id !== 'home').map((m) => m.pos) : [me];
+  const viewKey = `${!!session}-${me[0].toFixed(4)}-${w.beat}-${session?.venue}-${session?.buddies.map((b) => `${w.buddies[b]?.pos[0].toFixed(4)}`).join()}`;
+  const count = (st: Wellbeing[]) => people.filter((p) => st.includes(p)).length;
+  const rows = [
+    { key: 'safe', label: 'Safe', n: count(['SAFE']), icon: <CheckCircle2 size={16} aria-hidden />, color: 'var(--safe)', always: true },
+    { key: 'apart', label: 'Apart', n: count(['APART']), icon: <AlertTriangle size={16} aria-hidden />, color: 'var(--warn)' },
+    { key: 'missing', label: 'Missing', n: count(['MISSING', 'SOS']), icon: <ShieldAlert size={16} aria-hidden />, color: 'var(--danger)' },
+  ].filter((r) => r.always || r.n > 0);
 
   return (
     <>
-      <Header
-        title="Map"
-        subtitle={session ? `Tonight at ${session.venue}` : 'Your location'}
-        pill={<UserPill />}
-      />
+      <Header title="Map" pill={<UserPill />} />
       <div className={s.mapWrap}>
         <div className={s.mapFill}>
-          <MapView target={session ? { fit, maxZoom: 18 } : { center: me, zoom: 15 }} viewKey={viewKey} markers={markers} />
+          <MapView
+            target={session ? { fit, maxZoom: 18 } : { center: me, zoom: 15 }}
+            viewKey={viewKey}
+            markers={markers}
+            lines={trail.length > 1 ? [{ id: 'trail', points: trail, dashed: true, weight: 4, color: '#5B3DF5', opacity: 0.8 }] : []}
+            insets={session ? INSETS_ACTIVE : INSETS_IDLE}
+            zoomControls
+          />
         </div>
-        {session && (
-          <div className={s.legend} aria-label="Legend">
-            <span className={s.legendTitle}>Legend</span>
-            {(['SAFE', 'APART', 'MISSING'] as const).map((k) => (
-              <span key={k} className={s.legendRow}>
-                <span className={s.legendDot} style={{ background: STATUS_COLOR[k] }} aria-hidden />
-                {k === 'SAFE' ? 'Safe' : k === 'APART' ? 'Apart' : 'Missing'}
-              </span>
-            ))}
-          </div>
-        )}
-        <div className={cx(s.mapBottom, session && s.mapBottomActive)}>
+
+        {/* Venue, current scenario time and return time (change request 1). */}
+        <p className={s.venueChip} aria-live="polite">
+          {session ? <MapPin size={14} aria-hidden /> : <Home size={14} aria-hidden />}
+          <strong>{session ? session.venue : 'Home'}</strong>
+          <span>
+            · {fmtTime(t)}
+            {session && <span className={s.venueChipMuted}>, return by {fmtTime(session.returnMin)}</span>}
+          </span>
+        </p>
+
+        <div className={s.mapBottom}>
           {session ? (
             <>
-              <div className={s.sessionCard}>
-                <span className={s.sessionVenue}>
-                  <MapPin size={18} aria-hidden /> {session.venue}
-                </span>
-                <div className={s.metaRow}>
-                  <span>
-                    <Clock size={14} aria-hidden /> Back by {fmtTime(session.returnMin)}
+              {/* Doubles as the map legend (heuristic C2): colour + icon + label + count. */}
+              <div className={s.counts} role="group" aria-label="Legend: who is safe, apart or missing">
+                {rows.map((r) => (
+                  <span key={r.key} className={s.countRow} style={{ color: r.color }}>
+                    {r.icon}
+                    <span className={s.countLabel}>{r.label}</span>
+                    <span className={s.countN} style={{ background: r.color }}>
+                      {r.n}
+                    </span>
                   </span>
-                  <span>Out for {fmtDuration(now_ - session.startMin)}</span>
-                  <span>Now {fmtTime(now_)}</span>
-                </div>
-                <Button variant="ride" className={s.getHome} onClick={openRide}>
-                  <Car size={18} /> Get home safely
-                </Button>
+                ))}
               </div>
               <div className={s.btnRow}>
-                <Button variant="secondary" block onClick={() => set({ modal: 'edit', editPreset: null })}>
-                  <Pencil size={18} /> Edit Session
+                <Button variant="secondary" block className={s.editBtn} onClick={() => set({ modal: 'edit', editPreset: null })}>
+                  Edit Session
                 </Button>
-                <Button variant="dangerOutline" block onClick={() => set({ modal: 'end' })}>
-                  <Power size={18} /> End Session
+                <Button variant="primary" block onClick={() => set({ modal: 'end' })}>
+                  End Session
                 </Button>
               </div>
             </>

@@ -8,17 +8,16 @@ import { UserPill } from './common';
 import { telHref } from './PersonSheet';
 import s from './user.module.css';
 
-// "Help" from the paper prototype is replaced by Restroom so it can't be mistaken for SOS (decision 5).
 const QUICK = [
   { label: 'Bar', icon: <Wine size={18} /> },
   { label: 'Food', icon: <Utensils size={18} /> },
   { label: 'Ride', icon: <Bike size={18} /> },
-  { label: 'Restroom', icon: <Toilet size={18} /> },
+  { label: 'Toilet', icon: <Toilet size={18} /> },
   { label: 'Home', icon: <Home size={18} /> },
   { label: 'Dance', icon: <Music size={18} /> },
 ];
 
-const INTERVALS = [15, 30, 45, 60];
+const INTERVALS = [10, 20, 30];
 
 function NokSheet({ onClose }: { onClose: () => void }) {
   const toast = useUi((u) => u.toast);
@@ -160,7 +159,7 @@ export function MeTab() {
           </div>
         </div>
 
-        <Button variant="secondary" block onClick={logout}>
+        <Button variant="dangerOutline" block onClick={logout}>
           <LogOut size={18} /> Log out
         </Button>
       </div>

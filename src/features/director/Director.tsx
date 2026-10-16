@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { BellRing, Play, RotateCcw, SkipForward, UserCog, Wifi, WifiOff } from 'lucide-react';
+import { BellRing, MapPinned, Play, RotateCcw, SkipForward, UserCog, Wifi, WifiOff } from 'lucide-react';
 import { Button, Modal, cx, ui } from '../../components/ui';
 import { supabaseConfigured, normaliseRoom } from '../../store/sync';
 import { dispatch, useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
-import { BEATS, fireCheckIn, goToBeat, nextBeat, nowMin } from '../../store/world';
+import { BEATS, fireCheckIn, goToBeat, moveWithoutEditing, nextBeat, nowMin } from '../../store/world';
 import s from './director.module.css';
 
 /**
@@ -46,6 +46,9 @@ export function Director() {
           <RotateCcw size={18} /> Reset scenario
         </Button>
       </div>
+      <Button block style={{ marginTop: 8 }} onClick={() => dispatch(moveWithoutEditing)} disabled={!c.session || !!c.ride}>
+        <MapPinned size={18} /> Walk to another venue without editing (venue prompt)
+      </Button>
 
       <h3 className={s.h}>Jump to beat</h3>
       <ol className={s.beats}>

@@ -84,9 +84,9 @@ export const STATUS_COLOR: Record<PillStatus, string> = {
 };
 
 /**
- * Header status pill. Triple-tap opens the hidden Demo Director (DESIGN §7).
+ * Header status pill: "Active" / "Inactive". Triple-tap opens the hidden Demo Director (DESIGN §7).
  */
-export function SessionPill({ active, onLabel, offLabel }: { active: boolean; onLabel: string; offLabel: string }) {
+export function SessionPill({ active, label }: { active: boolean; label?: string }) {
   const taps = useRef<number[]>([]);
   const setUi = useUi((u) => u.set);
   const onClick = () => {
@@ -98,9 +98,9 @@ export function SessionPill({ active, onLabel, offLabel }: { active: boolean; on
     }
   };
   return (
-    <button type="button" className={cx(s.sessionPill, active && s.sessionPillOn)} onClick={onClick} aria-live="polite">
+    <button type="button" className={cx(s.sessionPill, active && s.sessionPillOn)} onClick={onClick} aria-live="polite" aria-label={label}>
       <span className={active ? s.dot : s.dotHollow} aria-hidden />
-      {active ? onLabel : offLabel}
+      {active ? 'Active' : 'Inactive'}
     </button>
   );
 }
@@ -123,11 +123,10 @@ export function Header({ title, subtitle, pill, right }: { title: string; subtit
           <h1 className={s.title}>{title}</h1>
           {subtitle && <p className={s.subtitle}>{subtitle}</p>}
         </div>
-        {right}
-      </div>
-      <div className={s.headerRow} style={{ alignItems: 'center' }}>
-        {pill}
-        <SimClock />
+        <div className={s.headerSide}>
+          {pill}
+          {right}
+        </div>
       </div>
     </header>
   );
@@ -179,18 +178,22 @@ export function Modal({
 }) {
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useRef(`m-${Math.random().toString(36).slice(2)}`).current;
+  // Keep the latest onClose in a ref: callers pass a new function every render, and re-running the
+  // focus effect on each render pulled focus out of inputs after every keystroke.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     panel.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onClose) onClose();
+      if (e.key === 'Escape' && closeRef.current) closeRef.current();
     };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
       prev?.focus?.();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div
       className={cx(s.scrim, center && s.scrimCenter)}

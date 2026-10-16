@@ -1,8 +1,8 @@
 # SafeSip
 
-Clickable high-fidelity web prototype of SafeSip (Team G3T3). It walks Scenario 1, "Chloe's Normal Night Out with Sarah", end to end on two phones: Chloe (User) and Helen (Watcher). The spec is `DESIGN.md` (v1.0).
+High-fidelity prototype of SafeSip (IDP Group Project). It walks through the Easy Scenario, "Chloe's Normal Night Out with Sarah", end to end on two phones: Chloe (User) and Helen (Watcher). The spec is `DESIGN.md` (v1.0).
 
-## Run locally
+## Run locally (method 1)
 
 ```bash
 npm install
@@ -17,7 +17,7 @@ The camera needs HTTPS on a phone, so test the dual camera on a Vercel deploy, n
 
 Login accepts any credentials and is pre-filled with Chloe's details. A username containing `helen` or `watcher` opens the Watcher view. Everything else opens the User view.
 
-## Recording on two phones
+## Running on two phones (method 2)
 
 1. Vercel needs `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` set (public anon key only, never `service_role`).
 2. Open `https://<deploy>/?room=G3T3` on both phones. Log in as Chloe on one and as Helen on the other.

@@ -8,7 +8,7 @@ import c from './camera.module.css';
 
 /*
  * BeReal-style dual capture (DESIGN §5.4).
- * Mode A "flip": rear photo -> stop rear -> open front -> 3-2-1 -> selfie. Every iPhone, most Android.
+ * Mode A "flip": rear photo -> stop rear -> open front -> selfie straight away. Every iPhone, most Android.
  * Mode B "dual": both streams live at once, one shutter. Only where the device allows it; probed once
  *                and cached in localStorage.
  * "stock": bundled photos when permission is denied or there is no camera.
@@ -19,6 +19,7 @@ type Mode = 'flip' | 'dual' | 'stock';
 type Phase = 'init' | 'rear' | 'flip' | 'front' | 'dual' | 'paused' | 'scanning' | 'result';
 interface Shot {
   full: string;
+  recap: string;
   thumb: string;
 }
 
@@ -30,6 +31,8 @@ const REAR: MediaStreamConstraints = {
   video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 960 } },
 };
 
+/** Front cameras often deliver a dark first frame while auto-exposure adjusts. */
+const EXPOSURE_SETTLE_MS = 250;
 const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 const stopStream = (st: MediaStream | null) => st?.getTracks().forEach((t) => t.stop());
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -61,7 +64,7 @@ function drawToShots(src: CanvasImageSource, w: number, h: number, mirror: boole
     ctx.drawImage(src, 0, 0, cv.width, cv.height);
     return cv.toDataURL('image/jpeg', q);
   };
-  return { full: make(1080, 0.85), thumb: make(240, 0.7) };
+  return { full: make(1080, 0.85), recap: make(640, 0.78), thumb: make(240, 0.7) };
 }
 
 /** Capture a frame: ImageCapture.takePhoto() where supported, else drawImage from the video. */
@@ -111,7 +114,6 @@ export function DualCamera() {
   const [phase, setPhase] = useState<Phase>('init');
   const [drink, setDrink] = useState<Shot | null>(null);
   const [selfie, setSelfie] = useState<Shot | null>(null);
-  const [count, setCount] = useState(0);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -220,14 +222,13 @@ export function DualCamera() {
     };
   }, [start, stopAll]);
 
-  const countdown = async (token: number) => {
-    for (let i = 3; i >= 1; i--) {
-      setCount(i);
-      await sleep(800);
-      if (token !== run.current) return false;
-    }
-    setCount(0);
-    return true;
+  /**
+   * No countdown (change request 4): like BeReal, the selfie is taken as soon as the front camera
+   * delivers frames, plus a short settle so auto-exposure isn't capturing a black first frame.
+   */
+  const settle = async (token: number) => {
+    await sleep(EXPOSURE_SETTLE_MS);
+    return token === run.current;
   };
 
   const toScan = () => {
@@ -241,12 +242,10 @@ export function DualCamera() {
     const token = run.current;
     try {
       if (mode === 'stock') {
-        setDrink({ full: STOCK_DRINK, thumb: STOCK_DRINK });
+        setDrink({ full: STOCK_DRINK, recap: STOCK_DRINK, thumb: STOCK_DRINK });
         setPhase('flip');
         await sleep(450);
-        setPhase('front');
-        if (!(await countdown(token))) return;
-        setSelfie({ full: STOCK_SELFIE, thumb: STOCK_SELFIE });
+        setSelfie({ full: STOCK_SELFIE, recap: STOCK_SELFIE, thumb: STOCK_SELFIE });
         toScan();
         return;
       }
@@ -283,8 +282,8 @@ export function DualCamera() {
       }
       if (token !== run.current) return stopStream(front);
       if (!front) {
-        setNote('Couldn’t open the front camera, so we used a sample selfie.');
-        setSelfie({ full: STOCK_SELFIE, thumb: STOCK_SELFIE });
+          setNote('Couldn’t open the front camera, so we used a sample selfie.');
+          setSelfie({ full: STOCK_SELFIE, recap: STOCK_SELFIE, thumb: STOCK_SELFIE });
         toScan();
         return;
       }
@@ -292,7 +291,7 @@ export function DualCamera() {
       setPhase('front');
       await attach(frontV.current, front);
       await framesFlowing([frontV.current!], 1200);
-      if (!(await countdown(token))) return;
+      if (!(await settle(token))) return;
       const f = await grab(frontV.current!, true);
       stopAll();
       setSelfie(f);
@@ -310,7 +309,7 @@ export function DualCamera() {
 
   const logIt = () => {
     const id = `scan-${Date.now().toString(36)}`;
-    if (drink && selfie) savePhotos(id, drink.thumb, selfie.thumb);
+    if (drink && selfie) savePhotos(id, drink.thumb, selfie.thumb, drink.recap, selfie.recap);
     dispatch((w, n) =>
       logDrink(w, { id, name: MARTINI.name, detail: `${MARTINI.size} · ~${MARTINI.abv}% ABV`, std: MARTINI.std, emoji: MARTINI.emoji, scanned: true }, n),
     );
@@ -330,9 +329,7 @@ export function DualCamera() {
         : phase === 'flip'
           ? 'Flipping…'
           : phase === 'front'
-            ? count
-              ? `Now you! ${count}`
-              : 'Now you!'
+            ? 'Now you!'
             : '';
 
   return (
@@ -356,11 +353,6 @@ export function DualCamera() {
         </div>
 
         {phase === 'flip' && <div className={c.flash} aria-hidden />}
-        {phase === 'front' && count > 0 && (
-          <div className={c.count} aria-live="assertive">
-            {count}
-          </div>
-        )}
         {(phase === 'scanning' || phase === 'result') && (
           <div className={cx(c.scan, phase === 'result' && c.scanDone)} aria-hidden={phase === 'result'}>
             <span className={c.corner} data-c="tl" />

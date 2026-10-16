@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { GlassWater, MapPin, Phone, User, Users } from 'lucide-react';
+import { GlassWater, MapPin, User, Users } from 'lucide-react';
 import { BottomNav, Banner, Button, cx, ui, type NavItem } from '../../components/ui';
 import { dispatch, useUi, useWorld, type UserTab } from '../../store';
 import { checkInOpen, dismissHomeReminder, dismissVenuePrompt } from '../../store/world';
 import { fmtTime } from '../../store/time';
-import { openRide } from './common';
+import { SosFab, openRide } from './common';
 import { BuddiesTab } from './BuddiesTab';
 import { CheckInModal } from './CheckIn';
 import { DrinksTab } from './DrinksTab';
@@ -26,20 +26,8 @@ const NAV: NavItem<UserTab>[] = [
 ];
 
 /** Floating SOS: every User screen while a session is active (A3). */
-function SosButton({ top }: { top: boolean }) {
-  const sos = useWorld((w) => w.world.chloe.sos);
-  const set = useUi((u) => u.set);
-  return (
-    <button
-      type="button"
-      className={cx(s.sos, sos && s.sosActive, top && s.sosTop)}
-      aria-label={sos ? 'SOS alert active, open it' : 'SOS emergency'}
-      onClick={() => set(sos ? { sosHiddenId: null } : { modal: 'sos' })}
-    >
-      <Phone size={20} aria-hidden />
-      SOS
-    </button>
-  );
+function SosButton({ top, raised }: { top: boolean; raised: boolean }) {
+  return <SosFab className={cx(top && s.sosTop, raised && s.sosRaised)} />;
 }
 
 export function UserShell() {
@@ -89,7 +77,7 @@ export function UserShell() {
       {c.homeReminder && !c.ride && !checkInOpen(c) && (
         <Banner
           title={`Almost ${c.session ? fmtTime(c.session.returnMin) : '2:00 AM'} — time to head home?`}
-          body="Book a SafeSip ride with care amenities, or arrange your own."
+          body="Book a ride back with care amenities, or get home yourself."
           actions={
             <>
               <Button variant="secondary" onClick={() => dispatch(dismissHomeReminder)}>
@@ -110,7 +98,10 @@ export function UserShell() {
       {c.summary && <SummaryModal />}
       {checkInOpen(c) && !c.sos && <CheckInModal />}
 
-      {c.session && <SosButton top={rideOpen || ui_.fullscreen === 'camera'} />}
+      {/* SOS is hidden on the ride booking screen (change request 15) and docked above the info panel for the whole booked ride (RideFlow). */}
+      {c.session && !c.ride && ui_.fullscreen !== 'rideQuote' && (
+        <SosButton top={rideOpen || ui_.fullscreen === 'camera'} raised={tab === 'map' && !rideOpen && !ui_.fullscreen} />
+      )}
       {ui_.modal === 'sos' && !c.sos && <SosSheet />}
       {sosVisible && <SosFlow />}
     </div>

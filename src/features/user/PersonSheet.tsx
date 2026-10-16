@@ -3,7 +3,7 @@ import { Avatar, LinkButton, Modal, StatusPill, ui } from '../../components/ui';
 import { CHLOE, personById } from '../../data/cast';
 import { useNow, useUi, useWorld } from '../../store';
 import { agoLabel } from '../../store/time';
-import { buddyBattery, buddyDistanceM, chloeBattery, nowMin, userWellbeing } from '../../store/world';
+import { buddyBattery, buddyDistanceM, buddyView, chloeBattery, nowMin, userWellbeing } from '../../store/world';
 import s from './user.module.css';
 
 const telHref = (phone: string) => `tel:${phone.replace(/\s/g, '')}`;
@@ -19,7 +19,7 @@ export function PersonSheet({ id }: { id: string }) {
   const p = isMe ? CHLOE : personById(id);
   const b = w.buddies[id];
   const t = nowMin(w, now);
-  const status = isMe ? userWellbeing(w, now) : b?.withChloe ? 'SAFE' : 'APART';
+  const status = isMe ? userWellbeing(w, now) : buddyView(w, id, now).status;
   const venue = w.chloe.session?.venue ?? 'Home';
   const rows: [string, string][] = [
     ['Last update', isMe ? 'just now' : agoLabel(b?.updatedMin ?? t, t)],

@@ -5,7 +5,7 @@ import { SARAH } from '../../data/cast';
 import { DRINK_PRESETS, customStd, paceOf, type Pace } from '../../data/drinks';
 import { dispatch, useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
-import { logDrink, nowMin, stdTotal, undoDrink } from '../../store/world';
+import { chloePace, logDrink, nowMin, stdTotal, undoDrink } from '../../store/world';
 import { UserPill } from './common';
 import s from './user.module.css';
 
@@ -69,19 +69,19 @@ export function DrinksTab() {
   const t = nowMin(w, now);
   const total = stdTotal(c);
   const hours = c.session ? (t - c.session.startMin) / 60 : Math.max(1, c.drinks.length ? (t - Math.min(...c.drinks.map((d) => d.t))) / 60 : 1);
-  const pace = paceOf(total, hours);
+  const pace = c.session ? chloePace(w, now) : paceOf(total, hours);
   const sarah = w.buddies[SARAH.id];
-  // Buddy drinks are hardcoded scenario data (DESIGN §5.4): pace stays LOW.
-  const sarahPace: Pace = 'LOW';
+  // Buddies only share their pace, never their drink log (change request 4). Sarah's is hardcoded.
+  const sarahPace: Pace = sarah?.pace ?? 'LOW';
 
   const log = (p: (typeof DRINK_PRESETS)[number]) =>
     dispatch((wd, n) => logDrink(wd, { id: id(), name: p.name, detail: p.size, std: p.std, emoji: p.emoji }, n));
 
   return (
     <>
-      <Header title="Drinks" subtitle="Log what you're drinking. Shared with your Night Buddies." pill={<UserPill />} />
+      <Header title="Drinks" pill={<UserPill />} />
       <div className={s.scroll}>
-        {!c.session && <p className={s.note}>No active session: drinks are logged for you only, nothing is shared.</p>}
+        {!c.session && <p className={s.note}>No active session: nothing is shared, not even your pace.</p>}
         <section className={ui.card} aria-label="Your totals">
           <h2 className={s.sectionTitle} style={{ margin: '0 0 10px' }}>
             Your totals
@@ -124,7 +124,7 @@ export function DrinksTab() {
           </span>
           <span>
             <span style={{ display: 'block', fontWeight: 800, fontSize: 19 }}>Scan a drink</span>
-            <span style={{ opacity: 0.9, fontSize: 15 }}>Snap your drink, we'll log it</span>
+            <span style={{ opacity: 0.9, fontSize: 12 }}>Snap your drink to log it, and add a selfie to your recap!</span>
           </span>
         </button>
 
@@ -193,12 +193,12 @@ export function DrinksTab() {
 
         {c.session?.buddies.includes(SARAH.id) && sarah && (
           <>
-            <h2 className={s.sectionTitle}>Buddy drinks</h2>
+            <h2 className={s.sectionTitle}>Buddy pace</h2>
             <div className={cx(ui.card, ui.row)}>
               <Avatar person={SARAH} size={42} />
               <span style={{ flex: 1, fontWeight: 650 }}>{SARAH.name}</span>
               <span className={ui.muted}>
-                {sarah.drinks} drinks · <strong className={s[`p_${sarahPace}`]}>{sarahPace}</strong>
+                Pace <strong className={s[`p_${sarahPace}`]}>{sarahPace}</strong>
               </span>
             </div>
           </>

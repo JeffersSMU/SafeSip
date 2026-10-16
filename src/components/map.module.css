@@ -1,0 +1,71 @@
+.attr {
+  position: absolute;
+  right: 8px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+}
+.attrTop {
+  top: 8px;
+}
+.attrLeft {
+  right: auto;
+  left: 8px;
+  flex-direction: row-reverse;
+}
+.attrBottom {
+  bottom: 8px;
+}
+.attrText {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-1);
+}
+.attrText a {
+  color: inherit;
+}
+.attrBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-muted);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-1);
+}
+
+/* Stacked zoom in/out control, docked under the top-right attribution button. */
+.zoom {
+  position: absolute;
+  right: 8px;
+  top: 44px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.zoomBtn {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+}
+.zoomBtn:first-child {
+  border-bottom: 1px solid var(--line);
+}
+.zoomBtn:active {
+  background: var(--surface-2);
+}
