@@ -639,7 +639,7 @@ export function answerCheckInOk(w0: World, nowMs = Date.now(), intervalMin = APA
     {
       id: `${c.id}-ok`,
       to: ['user'],
-      text: elapsed >= CHECKIN_BUDDY_S ? "Thanks! We've told Sarah you're safe." : "Thanks! You're marked Safe · Sarah checked in too",
+      text: elapsed >= CHECKIN_BUDDY_S ? "Thanks! We've told Sarah you're safe." : "Thanks! You're marked Safe.",
       tone: 'safe',
     },
     nowMs,

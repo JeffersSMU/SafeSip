@@ -123,7 +123,7 @@ export function DrinksTab() {
             <Camera size={30} aria-hidden />
           </span>
           <span>
-            <span style={{ display: 'block', fontWeight: 800, fontSize: 19 }}>Scan a drink</span>
+            <span style={{ display: 'block', fontWeight: 800, fontSize: 19 }}>Scan a Drink</span>
             <span style={{ opacity: 0.9, fontSize: 12 }}>Snap your drink to log it, and add a selfie to your recap!</span>
           </span>
         </button>
