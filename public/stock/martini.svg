@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 960">
+  <!-- Bundled sample "drink photo" used only when the camera is unavailable (DESIGN §5.4). -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="80%">
+      <stop offset="0" stop-color="#3b2a6e"/>
+      <stop offset="0.6" stop-color="#1b1430"/>
+      <stop offset="1" stop-color="#0c0a14"/>
+    </radialGradient>
+    <linearGradient id="liquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3efc9" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#d8cf8a" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0.15"/>
+      <stop offset="0.5" stop-color="#fff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0.12"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="960" fill="url(#bg)"/>
+  <circle cx="140" cy="180" r="60" fill="#f472b6" opacity="0.18"/>
+  <circle cx="600" cy="260" r="90" fill="#60a5fa" opacity="0.14"/>
+  <circle cx="560" cy="120" r="30" fill="#facc15" opacity="0.2"/>
+  <rect x="0" y="760" width="720" height="200" fill="#2a1e14"/>
+  <rect x="0" y="752" width="720" height="14" fill="#4a3424"/>
+  <!-- glass -->
+  <path d="M170 300 L550 300 L380 520 L340 520 Z" fill="url(#glass)" stroke="#fff" stroke-opacity="0.7" stroke-width="5"/>
+  <path d="M200 330 L520 330 L376 512 L344 512 Z" fill="url(#liquid)"/>
+  <rect x="352" y="518" width="16" height="200" fill="#fff" fill-opacity="0.55"/>
+  <ellipse cx="360" cy="728" rx="110" ry="20" fill="#fff" fill-opacity="0.5"/>
+  <!-- olive -->
+  <line x1="300" y1="260" x2="420" y2="430" stroke="#c08457" stroke-width="7" stroke-linecap="round"/>
+  <ellipse cx="392" cy="392" rx="30" ry="24" fill="#4d7c0f"/>
+  <circle cx="400" cy="386" r="9" fill="#dc2626"/>
+  <text x="360" y="880" fill="#fff" fill-opacity="0.55" font-family="Inter, sans-serif" font-size="30" text-anchor="middle">Sample photo</text>
+</svg>

@@ -1,0 +1,373 @@
+.map {
+  flex: 1;
+  min-height: 160px;
+  position: relative;
+}
+.panel {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -6px 24px rgba(20, 20, 31, 0.1);
+  padding: 16px 16px calc(16px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 68%;
+  overflow-y: auto;
+  position: relative;
+  z-index: 5;
+  margin-top: -18px;
+}
+.partner {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ride);
+  background: var(--ride-soft);
+  border-radius: 999px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.routeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.routeDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex: none;
+}
+.routeMeta {
+  margin-left: auto;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-muted);
+}
+.amenities {
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 8px 12px 10px;
+  margin: 0;
+}
+.amenities legend {
+  font-weight: 750;
+  padding: 0 4px;
+}
+.amenity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.amenity input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ride);
+}
+.fareRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: none;
+  padding: 0;
+  text-align: left;
+}
+.fare {
+  font-size: 28px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 650;
+  color: var(--brand-ink);
+  font-size: 15px;
+}
+.payRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 0 12px;
+  font-weight: 650;
+  text-align: left;
+}
+.fareTable {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fareTable div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.fareTable dt {
+  color: var(--text-muted);
+}
+.fareTable dd {
+  margin: 0;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.fareTotal {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.fareTotal dt,
+.fareTotal dd {
+  color: var(--text) !important;
+  font-weight: 800 !important;
+  font-size: 19px;
+}
+.radar {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  align-self: center;
+  border-radius: 50%;
+  background: var(--ride-soft);
+  display: grid;
+  place-items: center;
+}
+/* Rotating radar sweep: a car being searched for while the ride is matched. */
+.radar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg 68%, color-mix(in srgb, var(--ride) 38%, transparent) 360deg);
+  animation: ss-sweep 1.6s linear infinite;
+}
+.radarCar {
+  position: relative;
+  color: var(--ride);
+  animation: ss-pulse 1.6s ease-in-out infinite;
+}
+@keyframes ss-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ss-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.86);
+    opacity: 0.8;
+  }
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ride);
+  background: var(--ride-soft);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+.driver {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.driverAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #334155;
+  color: #fff;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+.plate {
+  font-weight: 800;
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 4px 8px;
+  letter-spacing: 0.04em;
+}
+.eta {
+  font-size: 20px;
+  font-weight: 800;
+}
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--ride);
+  transition: width 0.3s linear;
+}
+
+
+/* ---------- compact booking panel (change request 15) ---------- */
+.mapTall {
+  min-height: 52%;
+}
+.panelCompact {
+  gap: 8px;
+  padding-top: 12px;
+  max-height: 48%;
+}
+.grabNote {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ride);
+  background: var(--ride-soft);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+.pointRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  padding: 0;
+  text-align: left;
+  font-size: 15px;
+}
+.amenityChips {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.amenityChips legend {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 6px;
+  padding: 0;
+}
+.amenityChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+.amenityChip input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.amenityChip:focus-within {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.amenityChipOn {
+  border-color: var(--ride);
+  background: var(--ride-soft);
+  color: var(--ride);
+}
+.amenityChipOn::before {
+  content: '✓ ';
+  white-space: pre;
+}
+.fareLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.payChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border: 1.5px solid var(--line);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+
+/* Booked-ride panel wrapper: lets SOS sit just above the panel without being clipped by its scroll. */
+.panelWrap {
+  position: relative;
+  z-index: 5;
+  margin-top: -18px;
+  max-height: 68%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.panelWrap > .panel {
+  margin-top: 0;
+  max-height: none;
+  flex: 1;
+  min-height: 0;
+}
+.panelWrap .sosDock {
+  top: auto;
+  right: 16px;
+  bottom: calc(100% + 12px);
+}
+
+/* ================= motion (off under Reduce Motion, see global.css) ================= */
+/* The panel is keyed by ride stage, so each stage (matching, found, arriving, trip) slides in fresh. */
+.panel {
+  animation: ss-rise 0.34s var(--ease-out) backwards;
+}
+.driverAvatar {
+  animation: ss-pop 0.5s 0.1s var(--ease-spring) backwards;
+}
+.badge {
+  animation: ss-pop 0.4s var(--ease-spring) backwards;
+}
+.badge:nth-child(2) { animation-delay: 0.06s; }
+.badge:nth-child(3) { animation-delay: 0.12s; }
+.amenityChip,
+.payChip,
+.pointRow {
+  transition: background-color 0.18s, border-color 0.18s, color 0.18s, transform 0.18s var(--ease-spring);
+}
+.amenityChip:active,
+.payChip:active {
+  transform: scale(0.95);
+}
+.pointRow:active {
+  background-color: var(--surface-2);
+}
+/* The fare re-pops when amenities or points change it (keyed by amount in RideFlow). */
+.fareBump {
+  display: inline-block;
+  animation: ss-bump 0.4s var(--ease-spring);
+}

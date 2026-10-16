@@ -1,0 +1,420 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font);
+  font-size: var(--fs-base);
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Leaflet: keep the map under app chrome and match the light theme. */
+.leaflet-container {
+  font-family: var(--font);
+  background: #eef0f3;
+  /* Leaflet panes use z-index 400–1000; keep them inside the map so app modals stay on top. */
+  isolation: isolate;
+  z-index: 0;
+}
+.leaflet-div-icon {
+  background: none;
+  border: none;
+}
+/* Mute the OSM standard layer toward a light, low-saturation basemap so pins and trails stand out. */
+.ss-tiles {
+  filter: grayscale(0.85) brightness(1.06) contrast(0.92);
+}
+
+/* Map pins (Leaflet divIcons, so global rather than module classes). Icon box 150x80, tip at (75,50);
+   with --top the label sits above and the tip is at (75,72). */
+.ss-mk {
+  position: relative;
+  width: 150px;
+  height: 80px;
+  --c: var(--safe);
+}
+.ss-mk--apart {
+  --c: var(--warn);
+}
+.ss-mk--missing,
+.ss-mk--sos {
+  --c: var(--danger);
+}
+.ss-mk--brand {
+  --c: var(--brand);
+}
+.ss-mk__pin {
+  position: absolute;
+  left: 56px;
+  top: 4px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: var(--c);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 10px rgba(20, 20, 31, 0.28);
+  display: grid;
+  place-items: center;
+}
+.ss-mk__txt {
+  transform: rotate(45deg);
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+}
+.ss-mk__badge {
+  position: absolute;
+  left: 86px;
+  top: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--c);
+  font-size: 11px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 1px 4px rgba(20, 20, 31, 0.25);
+}
+.ss-mk__label {
+  position: absolute;
+  top: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  background: #fff;
+  border-radius: 8px;
+  padding: 3px 4px 3px 7px;
+  font-size: 12px;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(20, 20, 31, 0.16);
+}
+.ss-mk__chip {
+  background: color-mix(in srgb, var(--c) 14%, #fff);
+  color: var(--c);
+  font-weight: 750;
+  font-size: 11px;
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.ss-mk--pulse::before {
+  content: '';
+  position: absolute;
+  left: 51px;
+  top: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--c) 22%, transparent);
+  animation: ss-ping 2.2s ease-out infinite;
+}
+.ss-mk--top .ss-mk__pin {
+  top: 26px;
+}
+.ss-mk--top .ss-mk__badge {
+  top: 22px;
+}
+.ss-mk--top .ss-mk__label {
+  top: 0;
+}
+.ss-mk--top.ss-mk--pulse::before {
+  top: 42px;
+}
+.ss-mk--car .ss-mk__pin {
+  border-radius: 50%;
+  background: var(--ride);
+}
+.ss-mk--car .ss-mk__txt {
+  font-size: 18px;
+}/* The user's own pin: a larger round avatar in brand violet with a status-coloured halo, so "you"
+   never looks like a buddy's teardrop pin (change request 8). Same 150x80 box, centre at (75,50). */
+.ss-mk--self .ss-mk__pin {
+  left: 53px;
+  top: 28px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  transform: none;
+  background: var(--brand);
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px var(--c), 0 6px 14px rgba(91, 61, 245, 0.45);
+}
+.ss-mk--self .ss-mk__txt {
+  transform: none;
+  font-size: 14px;
+}
+.ss-mk--self .ss-mk__badge {
+  left: 88px;
+  top: 24px;
+}
+.ss-mk--self .ss-mk__label {
+  top: 0;
+  background: var(--brand);
+  color: #fff;
+}
+.ss-mk--self .ss-mk__chip {
+  background: #fff;
+}
+.ss-mk--self.ss-mk--pulse::before {
+  left: 45px;
+  top: 20px;
+  width: 60px;
+  height: 60px;
+}
+
+/* Target / meet-up point flag. Box 150x64, flag foot at (75,58). */
+.ss-dest {
+  position: relative;
+  width: 150px;
+  height: 64px;
+}
+.ss-dest__cap {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 3px 8px;
+  box-shadow: 0 2px 8px rgba(20, 20, 31, 0.2);
+}
+.ss-dest__flag {
+  position: absolute;
+  left: 66px;
+  top: 24px;
+  font-size: 22px;
+  line-height: 1;
+}
+.ss-dest__dot {
+  position: absolute;
+  left: 69px;
+  top: 52px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(20, 20, 31, 0.12);
+}.ss-venue {
+  background: var(--text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transform: translate(-50%, -360%);
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.ss-home {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--text);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  box-shadow: var(--shadow-1);
+}
+
+@keyframes ss-ping {
+  from {
+    transform: scale(0.8);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes ss-shake {
+  10%,
+  90% {
+    transform: translateX(-2px);
+  }
+  20%,
+  80% {
+    transform: translateX(4px);
+  }
+  30%,
+  50%,
+  70% {
+    transform: translateX(-8px);
+  }
+  40%,
+  60% {
+    transform: translateX(8px);
+  }
+}
+
+/* ---------- shared motion ---------- */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Entrances use `backwards` fill (not `both`) so no transform lingers afterwards: a leftover transform
+   would make a stacking context and trap modals rendered inside a tab under the bottom nav. */
+@keyframes ss-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes ss-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ss-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+@keyframes ss-bump {
+  40% {
+    transform: scale(1.18);
+  }
+}
+
+/* Map pins drop in (and re-pop when their status or label changes, since Leaflet rebuilds the icon). */
+@keyframes ss-pin-in {
+  0% {
+    transform: rotate(-45deg) translate(-14px, -14px) scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(-45deg) translate(1px, 1px) scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes ss-self-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.ss-mk__pin {
+  animation: ss-pin-in 0.45s var(--ease-out) backwards;
+}
+.ss-mk--self .ss-mk__pin {
+  animation-name: ss-self-in;
+}
+.ss-mk__label,
+.ss-mk__badge {
+  animation: ss-fade 0.3s 0.15s ease-out backwards;
+}
+/* Meet-up / destination flag: drops onto its spot, then the base ripples once. */
+@keyframes ss-flag-drop {
+  0% {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+}
+@keyframes ss-dot-ring {
+  from {
+    box-shadow: 0 0 0 0 rgba(20, 20, 31, 0.35);
+  }
+  to {
+    box-shadow: 0 0 0 16px rgba(20, 20, 31, 0);
+  }
+}
+.ss-dest__flag {
+  animation: ss-flag-drop 0.5s var(--ease-out) backwards;
+}
+.ss-dest__dot {
+  animation: ss-dot-ring 0.9s 0.35s ease-out 2;
+}
+.ss-dest__cap {
+  animation: ss-fade 0.3s 0.25s ease-out backwards;
+}
+
+/* Reduce Motion: set from the profile setting, or the device's prefers-reduced-motion when the person
+   hasn't chosen (store/index.ts writes html[data-motion]). Animations jump to their end state. */
+html[data-motion='reduce'] *,
+html[data-motion='reduce'] *::before,
+html[data-motion='reduce'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion='reduce'] .ss-mk--pulse::before {
+  display: none;
+}

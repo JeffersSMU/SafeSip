@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400">
+  <!-- Bundled selfie placeholder used only when the front camera is unavailable. -->
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4c1d95"/>
+      <stop offset="1" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#b)"/>
+  <circle cx="60" cy="70" r="26" fill="#f472b6" opacity="0.3"/>
+  <circle cx="250" cy="110" r="34" fill="#60a5fa" opacity="0.25"/>
+  <path d="M40 400 C50 300 250 300 260 400 Z" fill="#7c3aed"/>
+  <path d="M85 180 C85 100 215 100 215 180 L215 250 C200 280 100 280 85 250 Z" fill="#2b1810"/>
+  <ellipse cx="150" cy="195" rx="55" ry="68" fill="#e8b48e"/>
+  <path d="M95 175 C100 120 200 115 206 170 C180 150 130 150 95 175 Z" fill="#2b1810"/>
+  <circle cx="128" cy="195" r="6" fill="#2b1810"/>
+  <circle cx="172" cy="195" r="6" fill="#2b1810"/>
+  <path d="M130 228 Q150 245 170 228" fill="none" stroke="#9a3412" stroke-width="5" stroke-linecap="round"/>
+  <rect x="135" y="258" width="30" height="40" fill="#e8b48e"/>
+  <text x="150" y="380" fill="#fff" fill-opacity="0.6" font-family="Inter, sans-serif" font-size="20" text-anchor="middle">Sample selfie</text>
+</svg>
