@@ -340,3 +340,34 @@
   right: 16px;
   bottom: calc(100% + 12px);
 }
+
+/* ================= motion (off under Reduce Motion, see global.css) ================= */
+/* The panel is keyed by ride stage, so each stage (matching, found, arriving, trip) slides in fresh. */
+.panel {
+  animation: ss-rise 0.34s var(--ease-out) backwards;
+}
+.driverAvatar {
+  animation: ss-pop 0.5s 0.1s var(--ease-spring) backwards;
+}
+.badge {
+  animation: ss-pop 0.4s var(--ease-spring) backwards;
+}
+.badge:nth-child(2) { animation-delay: 0.06s; }
+.badge:nth-child(3) { animation-delay: 0.12s; }
+.amenityChip,
+.payChip,
+.pointRow {
+  transition: background-color 0.18s, border-color 0.18s, color 0.18s, transform 0.18s var(--ease-spring);
+}
+.amenityChip:active,
+.payChip:active {
+  transform: scale(0.95);
+}
+.pointRow:active {
+  background-color: var(--surface-2);
+}
+/* The fare re-pops when amenities or points change it (keyed by amount in RideFlow). */
+.fareBump {
+  display: inline-block;
+  animation: ss-bump 0.4s var(--ease-spring);
+}

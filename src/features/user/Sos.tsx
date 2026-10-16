@@ -94,7 +94,7 @@ export function SosFlow() {
                   <Avatar person={p} size={40} />
                   <span style={{ fontWeight: 700 }}>{done ? `${p.short} alerted` : `Alerting ${p.short}…`}</span>
                   <span className={s.recipientState} style={{ color: done ? 'var(--safe)' : 'var(--text-muted)' }}>
-                    {done ? <Check size={20} aria-label="done" /> : <Loader2 size={20} aria-hidden />}
+                    {done ? <Check size={20} aria-label="done" /> : <Loader2 size={20} aria-hidden className={s.spin} />}
                   </span>
                 </div>
               );

@@ -14,14 +14,10 @@
   margin: 12px 0 10px;
 }
 .logo {
-  width: 76px;
-  height: 76px;
-  border-radius: 24px;
-  background: var(--brand);
-  color: #fff;
+  width: 150px;
   display: grid;
   place-items: center;
-  box-shadow: 0 10px 30px rgba(91, 61, 245, 0.35);
+  padding-bottom: 8px;
 }
 .name {
   font-size: 32px;
@@ -30,7 +26,8 @@
 }
 .tagline {
   color: var(--text-muted);
-  font-weight: 550;
+  font-weight: 600;
+  font-size: small;
 }
 .phoneRow {
   display: flex;
@@ -178,4 +175,36 @@
   border: 1.5px solid var(--line);
   background: var(--surface);
   padding: 0 12px;
+}
+
+/* ================= motion (off under Reduce Motion, see global.css) ================= */
+/* Logo springs in, then the rest of the form cascades up. */
+.logo {
+  animation: ss-pop 0.55s var(--ease-spring) backwards;
+}
+.name,
+.tagline {
+  animation: ss-rise 0.4s 0.12s var(--ease-out) backwards;
+}
+.tagline {
+  animation-delay: 0.18s;
+}
+.page > * {
+  animation: ss-rise 0.4s var(--ease-out) backwards;
+}
+.page > :nth-child(2) { animation-delay: 0.1s; }
+.page > :nth-child(3) { animation-delay: 0.15s; }
+.page > :nth-child(4) { animation-delay: 0.2s; }
+.page > :nth-child(5) { animation-delay: 0.25s; }
+.page > :nth-child(n + 6) { animation-delay: 0.3s; }
+.tab,
+.addBtn {
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.18s var(--ease-spring);
+}
+.tab:active,
+.addBtn:active {
+  transform: scale(0.96);
+}
+.chip {
+  animation: ss-rise 0.3s var(--ease-out) backwards;
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bike, ChevronRight, Footprints, Home, LogOut, MapPin, Music, Phone, Plus, ShieldCheck, Timer, Toilet, Utensils, Wine } from 'lucide-react';
 import { Avatar, Button, Header, LinkButton, Modal, cx, ui } from '../../components/ui';
+import { MotionSetting } from '../../components/MotionSetting';
 import { CHLOE, HELEN, NEXT_OF_KIN, personById } from '../../data/cast';
 import { dispatch, useUi, useWorld } from '../../store';
 import { manualCheckIn, setStatus } from '../../store/world';
@@ -157,6 +158,7 @@ export function MeTab() {
               Enabled
             </span>
           </div>
+          <MotionSetting />
         </div>
 
         <Button variant="dangerOutline" block onClick={logout}>

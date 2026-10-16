@@ -918,3 +918,172 @@
 .recapShotBtn { border:0; padding:0; background:none; display:block; }
 
 
+
+/* ================= motion =================
+   All of this is switched off by Reduce Motion (html[data-motion='reduce'] in global.css).
+   Entrances use `backwards` fill so no transform lingers (see the note in global.css). */
+
+/* Tab switch: the new tab fades up (main is keyed by tab in the shells). */
+.content {
+  animation: ss-rise 0.28s var(--ease-out) backwards;
+}
+/* Page content cascades in, one card after another. */
+.scroll > * {
+  animation: ss-rise 0.36s var(--ease-out) backwards;
+}
+.scroll > :nth-child(2) { animation-delay: 0.04s; }
+.scroll > :nth-child(3) { animation-delay: 0.08s; }
+.scroll > :nth-child(4) { animation-delay: 0.12s; }
+.scroll > :nth-child(5) { animation-delay: 0.16s; }
+.scroll > :nth-child(6) { animation-delay: 0.2s; }
+.scroll > :nth-child(7) { animation-delay: 0.24s; }
+.scroll > :nth-child(n + 8) { animation-delay: 0.28s; }
+
+/* SOS springs in when a session starts, then keeps its glow. */
+@keyframes sosIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+.sos {
+  animation: sosIn 0.5s var(--ease-spring) backwards, sosGlow 1.8s 0.5s ease-in-out infinite;
+  transition: transform 0.18s var(--ease-spring);
+}
+.sos:active {
+  transform: scale(0.92);
+}
+
+/* Map overlays slide in; the scenario time fades when it changes (keyed by time). */
+@keyframes slideRight {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+}
+.venueChip {
+  animation: slideRight 0.35s var(--ease-out) backwards;
+}
+.tick {
+  display: inline-block;
+  animation: ss-fade 0.4s ease-out backwards;
+}
+.mapBottom {
+  animation: ss-rise 0.4s 0.08s var(--ease-out) backwards;
+}
+/* Legend count bumps when it changes (keyed by count). */
+.countN {
+  transition: background-color 0.3s;
+}
+.bump {
+  animation: ss-bump 0.45s var(--ease-spring);
+}
+
+/* Chips and rows: smooth selection + press feedback. */
+.chip,
+.dayChip,
+.segTab,
+.timeBtn {
+  transition: background-color 0.18s, border-color 0.18s, color 0.18s, transform 0.18s var(--ease-spring);
+}
+.chip:active,
+.dayChip:active,
+.segTab:active,
+.timeBtn:active {
+  transform: scale(0.95);
+}
+.chipOn svg {
+  animation: ss-bump 0.4s var(--ease-spring);
+}
+.setRow,
+.buddyRow,
+.suggest button {
+  transition: background-color 0.15s, transform 0.18s var(--ease-spring);
+}
+.setRow:active,
+.suggest button:active {
+  background-color: var(--surface-2);
+}
+.buddyRow:active {
+  transform: scale(0.98);
+}
+
+/* Drinks: tactile presets, a lively scan card, new log rows slide in. */
+.drinkBtn,
+.scanCard {
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.2s;
+}
+.drinkBtn:active {
+  transform: scale(0.92);
+}
+.drinkBtn:active .plus {
+  transform: rotate(90deg);
+}
+.plus {
+  transition: transform 0.25s var(--ease-spring);
+}
+.scanCard:active {
+  transform: scale(0.97);
+}
+@media (hover: hover) {
+  .scanCard:hover {
+    box-shadow: 0 14px 30px rgba(91, 61, 245, 0.38);
+  }
+  .scanCard:hover .scanIcon svg {
+    animation: ss-bump 0.45s var(--ease-spring);
+  }
+}
+.logRow {
+  animation: ss-rise 0.32s var(--ease-out) backwards;
+}
+.tip {
+  animation: ss-rise 0.22s var(--ease-out) backwards;
+}
+
+/* Full-screen flows (ride, camera) rise in. */
+.full {
+  animation: ss-rise 0.32s var(--ease-out) backwards;
+}
+
+/* SOS takeover: badge springs in, recipients and call buttons cascade. */
+.sosFull {
+  animation: ss-fade 0.2s ease-out backwards;
+}
+.sosBadge {
+  animation: ss-pop 0.5s var(--ease-spring) backwards, sosGlow 1.6s 0.5s ease-in-out infinite;
+}
+.recipient,
+.callBtn {
+  animation: ss-rise 0.32s var(--ease-out) backwards;
+}
+.recipient:nth-child(2),
+.callBtn:nth-of-type(2) { animation-delay: 0.06s; }
+.recipient:nth-child(3),
+.callBtn:nth-of-type(3) { animation-delay: 0.12s; }
+.recipient:nth-child(4),
+.callBtn:nth-of-type(4) { animation-delay: 0.18s; }
+.recipientState svg {
+  animation: ss-pop 0.35s var(--ease-spring) backwards;
+}
+
+/* Recap: hero and tiles cascade in. */
+.recapHero,
+.recapTile,
+.recapCard {
+  animation: ss-rise 0.36s var(--ease-out) backwards;
+}
+.recapTile:nth-child(2) { animation-delay: 0.05s; }
+.recapTile:nth-child(3) { animation-delay: 0.1s; }
+.recapTile:nth-child(4) { animation-delay: 0.15s; }
+.lightbox {
+  animation: ss-fade 0.2s ease-out backwards;
+}
+
+.recipientState .spin {
+  animation: ss-spin 0.9s linear infinite;
+}
+@keyframes ss-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

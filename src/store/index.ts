@@ -100,9 +100,13 @@ interface UiPersisted {
   extraChild: boolean;
   checkInInterval: number;
   quietUpdates: boolean;
+  /** Reduce motion: true/false once the person picks one; null follows the device setting. */
+  reduceMotion: boolean | null;
 }
 
 interface UiStore extends UiPersisted {
+  /** Live `prefers-reduced-motion` of this device (not persisted). */
+  systemReducedMotion: boolean;
   authScreen: 'login' | 'signup';
   userTab: UserTab;
   watcherTab: WatcherTab;
@@ -124,8 +128,10 @@ interface UiStore extends UiPersisted {
   logout: () => void;
 }
 
-const UI_DEFAULTS: UiPersisted = { role: null, room: '', extraChild: false, checkInInterval: 30, quietUpdates: true };
+const UI_DEFAULTS: UiPersisted = { role: null, room: '', extraChild: false, checkInInterval: 30, quietUpdates: true, reduceMotion: null };
 const persisted: UiPersisted = { ...UI_DEFAULTS, ...load<Partial<UiPersisted>>(UI_KEY, {}) };
+
+const motionQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
 function initialParams() {
   const q = new URLSearchParams(location.search);
@@ -145,6 +151,7 @@ export const useUi = create<UiStore>((set, get) => ({
   ...persisted,
   role: startParams.role ?? persisted.role,
   room: startParams.room ?? persisted.room,
+  systemReducedMotion: motionQuery?.matches ?? false,
   authScreen: 'login',
   // Deep link ?tab=map|buddies|drinks|me (User) or map|me (Watcher), for testing and screenshots.
   userTab: (['map', 'buddies', 'drinks', 'me'].includes(startParams.tab ?? '') ? startParams.tab : 'map') as UserTab,
@@ -171,9 +178,37 @@ export const useUi = create<UiStore>((set, get) => ({
 }));
 
 useUi.subscribe((s) => {
-  const p: UiPersisted = { role: s.role, room: s.room, extraChild: s.extraChild, checkInInterval: s.checkInInterval, quietUpdates: s.quietUpdates };
+  const p: UiPersisted = {
+    role: s.role,
+    room: s.room,
+    extraChild: s.extraChild,
+    checkInInterval: s.checkInInterval,
+    quietUpdates: s.quietUpdates,
+    reduceMotion: s.reduceMotion,
+  };
   localStorage.setItem(UI_KEY, JSON.stringify(p));
+  applyMotionAttr();
 });
+
+// ---------- reduced motion ----------
+
+/** Whether motion is reduced right now: the person's choice, else the device's prefers-reduced-motion. */
+export function motionReduced() {
+  const u = useUi.getState();
+  return u.reduceMotion ?? u.systemReducedMotion;
+}
+
+/** React hook form of motionReduced(), re-rendering when either the setting or the device flag changes. */
+export function useReducedMotion() {
+  return useUi((u) => u.reduceMotion ?? u.systemReducedMotion);
+}
+
+/** CSS switches every animation off via html[data-motion='reduce'] (global.css). */
+function applyMotionAttr() {
+  document.documentElement.dataset.motion = motionReduced() ? 'reduce' : 'full';
+}
+applyMotionAttr();
+motionQuery?.addEventListener('change', (e) => useUi.setState({ systemReducedMotion: e.matches }));
 
 // Mid-size recap images (~640px) are far smaller than full captures, so a night's worth fits.
 const PHOTO_CAP = 20;

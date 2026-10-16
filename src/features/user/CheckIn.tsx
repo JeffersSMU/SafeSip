@@ -24,7 +24,7 @@ export function CheckInModal() {
   let danger = false;
   if (el < CHECKIN_BUDDY_S) {
     remaining = CHECKIN_BUDDY_S - el;
-    msg = el >= CHECKIN_WARN_S ? `${buddyLabel} and Helen will be notified in ${Math.ceil(remaining)} s` : '';
+    msg = el >= CHECKIN_WARN_S ? `${buddyLabel} will be notified in ${Math.ceil(remaining)} s` : '';
   } else if (el < CHECKIN_NOK_S) {
     remaining = CHECKIN_NOK_S - el;
     msg = `${buddyLabel} has been alerted. Helen will be notified in ${Math.ceil(remaining)} s`;

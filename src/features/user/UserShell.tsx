@@ -47,7 +47,7 @@ export function UserShell() {
 
   return (
     <div className={cx(s.shell, shaking && ui.shake)}>
-      <main className={s.content}>
+      <main key={tab} className={s.content}>
         {tab === 'map' && <MapTab />}
         {tab === 'buddies' && <BuddiesTab />}
         {tab === 'drinks' && <DrinksTab />}

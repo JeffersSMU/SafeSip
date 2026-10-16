@@ -15,10 +15,16 @@
   background: var(--surface-2);
   color: var(--text);
   text-decoration: none;
-  transition: transform 0.08s, filter 0.15s;
+  transition: transform 0.18s var(--ease-spring), filter 0.15s, box-shadow 0.2s, background-color 0.2s;
 }
-.btn:active {
-  transform: scale(0.98);
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+  }
 }
 .btn:disabled {
   opacity: 0.45;
@@ -70,6 +76,10 @@
   background: var(--surface-2);
   color: var(--text);
   flex: none;
+  transition: transform 0.18s var(--ease-spring), background-color 0.15s;
+}
+.iconBtn:active {
+  transform: scale(0.9);
 }
 
 /* ---------- header ---------- */
@@ -122,12 +132,30 @@
   color: var(--text-muted);
   min-height: 32px;
   user-select: none;
+  transition: background-color 0.3s, color 0.3s;
+}
+/* Re-mounted (via key) when Active/Inactive flips, so the change is noticed. */
+.changed {
+  animation: ss-pop 0.4s var(--ease-spring) backwards;
 }
 .sessionPillOn {
   background: var(--safe-soft);
   color: var(--safe);
   box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.4);
   animation: pillGlow 2.4s ease-in-out infinite;
+}
+.sessionPillOn.changed {
+  animation: ss-pop 0.4s var(--ease-spring) backwards, pillGlow 2.4s 0.4s ease-in-out infinite;
+}
+/* The live dot breathes while a session is active. */
+.sessionPillOn .dot {
+  animation: dotBreathe 2.4s ease-in-out infinite;
+}
+@keyframes dotBreathe {
+  50% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
 }
 .dot {
   width: 9px;
@@ -169,6 +197,10 @@
 .s_SAFE {
   background: var(--safe-soft);
   color: var(--safe);
+}
+/* Status pill re-mounted (via key) when its status changes: a quick pop draws the eye to it. */
+.status.changed {
+  animation: ss-pop 0.4s var(--ease-spring) backwards;
 }
 .s_APART {
   background: var(--warn-soft);
@@ -216,12 +248,47 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
+  position: relative;
+  transition: color 0.2s;
+}
+.navBtn svg {
+  transition: transform 0.18s var(--ease-spring);
+}
+.navBtn:active svg {
+  transform: scale(0.85);
 }
 .navBtnOn {
   color: var(--brand);
 }
 .navBtnOn svg {
   stroke-width: 2.4;
+  animation: navPop 0.42s var(--ease-spring);
+}
+/* Active-tab indicator bar that grows in from the centre. */
+.navBtnOn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 36px;
+  height: 3px;
+  margin-left: -18px;
+  border-radius: 0 0 3px 3px;
+  background: var(--brand);
+  animation: navBar 0.3s var(--ease-out);
+}
+@keyframes navPop {
+  0% {
+    transform: scale(0.8) translateY(2px);
+  }
+  50% {
+    transform: scale(1.15) translateY(-2px);
+  }
+}
+@keyframes navBar {
+  from {
+    transform: scaleX(0);
+  }
 }
 
 /* ---------- modal / sheet ---------- */
@@ -253,6 +320,13 @@
 .panelCenter {
   border-radius: 24px;
   padding-bottom: 20px;
+  animation: popIn 0.28s var(--ease-spring);
+}
+@keyframes popIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
 }
 .panelHead {
   display: flex;
@@ -357,7 +431,7 @@
   padding: 12px 14px;
   box-shadow: var(--shadow-2);
   border: 1px solid var(--line);
-  animation: slideDown 0.25s ease-out;
+  animation: slideDown 0.4s var(--ease-spring);
 }
 .bannerTop {
   display: flex;
@@ -530,6 +604,7 @@
   background: var(--surface);
   padding: 0 14px;
   width: 100%;
+  transition: border-color 0.18s, box-shadow 0.18s;
 }
 .input:focus {
   border-color: var(--brand);

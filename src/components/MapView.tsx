@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Info, Minus, Plus, X } from 'lucide-react';
 import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import type { LeafletMouseEvent } from 'leaflet';
 import type { LatLng } from '../data/places';
+import { motionReduced } from '../store';
 import s from './map.module.css';
 
 export interface MapMarker {
@@ -16,6 +17,8 @@ export interface MapMarker {
   label: string;
   onClick?: () => void;
   z?: number;
+  /** How long a position change takes to glide there (ms, default 700; 0 snaps). */
+  glideMs?: number;
 }
 
 export interface MapLine {
@@ -92,7 +95,7 @@ export const homeHtml = () => `<div class="ss-home" aria-hidden="true">⌂</div>
 function ViewController({ target, viewKey, insets }: { target: MapViewTarget; viewKey: string; insets: MapInsets }) {
   const map = useMap();
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = motionReduced();
     const tl = L.point(40 + (insets.left ?? 0), 40 + (insets.top ?? 0));
     const br = L.point(40 + (insets.right ?? 0), 40 + (insets.bottom ?? 0));
     if ('fit' in target) {
@@ -150,6 +153,43 @@ function ClickCatcher({ onClick }: { onClick: (p: LatLng) => void }) {
   return null;
 }
 
+/** ~3 km in degrees: anything further is a jump (reset, deep link), not walking, so it snaps. */
+const GLIDE_MAX_DEG = 0.03;
+
+/**
+ * Eases a marker from where it is shown to its new position, so people walk between beats instead of
+ * teleporting. Tweens lat/lng (not CSS transforms), so it stays correct while the map zooms or flies.
+ * Snaps instantly when motion is reduced.
+ */
+function useGlide(pos: LatLng, ms: number): LatLng {
+  const [shown, setShown] = useState<LatLng>(pos);
+  const shownRef = useRef<LatLng>(pos);
+  const [lat, lng] = pos;
+  useEffect(() => {
+    const from = shownRef.current;
+    if (from[0] === lat && from[1] === lng) return;
+    const far = Math.abs(from[0] - lat) + Math.abs(from[1] - lng) > GLIDE_MAX_DEG;
+    if (ms <= 0 || far || motionReduced()) {
+      shownRef.current = [lat, lng];
+      setShown([lat, lng]);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - start) / ms);
+      const e = 1 - (1 - k) ** 3; // ease-out cubic
+      const p: LatLng = [from[0] + (lat - from[0]) * e, from[1] + (lng - from[1]) * e];
+      shownRef.current = p;
+      setShown(p);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [lat, lng, ms]);
+  return shown;
+}
+
 /** Small stacked zoom in/out control, docked top-right below the attribution (i) button. */
 function ZoomControls() {
   const map = useMap();
@@ -170,9 +210,10 @@ function PinMarker({ m }: { m: MapMarker }) {
     () => L.divIcon({ html: m.html, className: '', iconSize: m.size ?? PIN_SIZE, iconAnchor: m.anchor ?? PIN_ANCHOR }),
     [m.html, m.size, m.anchor],
   );
+  const pos = useGlide(m.pos, m.glideMs ?? 700);
   return (
     <Marker
-      position={m.pos}
+      position={pos}
       icon={icon}
       zIndexOffset={m.z ?? 0}
       title={m.label}

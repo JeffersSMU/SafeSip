@@ -87,7 +87,7 @@ export function WatcherShell() {
   const set = useUi((u) => u.set);
   return (
     <div className={s.shell}>
-      <main className={s.content}>{tab === 'map' ? <WatcherMap /> : <WatcherMe />}</main>
+      <main key={tab} className={s.content}>{tab === 'map' ? <WatcherMap /> : <WatcherMe />}</main>
       <BottomNav items={NAV} value={tab} onChange={(k) => set({ watcherTab: k })} />
       <NoticeBanner />
       <EmergencyTakeover />

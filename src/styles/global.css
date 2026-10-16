@@ -309,16 +309,112 @@ p {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.001ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
-    scroll-behavior: auto !important;
+/* ---------- shared motion ---------- */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* Entrances use `backwards` fill (not `both`) so no transform lingers afterwards: a leftover transform
+   would make a stacking context and trap modals rendered inside a tab under the bottom nav. */
+@keyframes ss-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
-  .ss-mk--pulse::before {
-    display: none;
+}
+@keyframes ss-fade {
+  from {
+    opacity: 0;
   }
+}
+@keyframes ss-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+@keyframes ss-bump {
+  40% {
+    transform: scale(1.18);
+  }
+}
+
+/* Map pins drop in (and re-pop when their status or label changes, since Leaflet rebuilds the icon). */
+@keyframes ss-pin-in {
+  0% {
+    transform: rotate(-45deg) translate(-14px, -14px) scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: rotate(-45deg) translate(1px, 1px) scale(1.06);
+    opacity: 1;
+  }
+}
+@keyframes ss-self-in {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.ss-mk__pin {
+  animation: ss-pin-in 0.45s var(--ease-out) backwards;
+}
+.ss-mk--self .ss-mk__pin {
+  animation-name: ss-self-in;
+}
+.ss-mk__label,
+.ss-mk__badge {
+  animation: ss-fade 0.3s 0.15s ease-out backwards;
+}
+/* Meet-up / destination flag: drops onto its spot, then the base ripples once. */
+@keyframes ss-flag-drop {
+  0% {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(2px);
+    opacity: 1;
+  }
+}
+@keyframes ss-dot-ring {
+  from {
+    box-shadow: 0 0 0 0 rgba(20, 20, 31, 0.35);
+  }
+  to {
+    box-shadow: 0 0 0 16px rgba(20, 20, 31, 0);
+  }
+}
+.ss-dest__flag {
+  animation: ss-flag-drop 0.5s var(--ease-out) backwards;
+}
+.ss-dest__dot {
+  animation: ss-dot-ring 0.9s 0.35s ease-out 2;
+}
+.ss-dest__cap {
+  animation: ss-fade 0.3s 0.25s ease-out backwards;
+}
+
+/* Reduce Motion: set from the profile setting, or the device's prefers-reduced-motion when the person
+   hasn't chosen (store/index.ts writes html[data-motion]). Animations jump to their end state. */
+html[data-motion='reduce'] *,
+html[data-motion='reduce'] *::before,
+html[data-motion='reduce'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion='reduce'] .ss-mk--pulse::before {
+  display: none;
 }

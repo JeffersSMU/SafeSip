@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Camera, Loader2, RefreshCw, X } from 'lucide-react';
 import { Button, IconButton, cx } from '../../components/ui';
 import { MARTINI } from '../../data/drinks';
-import { dispatch, savePhotos, useUi } from '../../store';
+import { dispatch, motionReduced, savePhotos, useUi } from '../../store';
 import { logDrink } from '../../store/world';
 import c from './camera.module.css';
 
@@ -35,7 +35,7 @@ const REAR: MediaStreamConstraints = {
 const EXPOSURE_SETTLE_MS = 250;
 const sleep = (ms: number) => new Promise<void>((r) => window.setTimeout(r, ms));
 const stopStream = (st: MediaStream | null) => st?.getTracks().forEach((t) => t.stop());
-const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const reduceMotion = motionReduced;
 
 async function attach(v: HTMLVideoElement | null, st: MediaStream) {
   if (!v) return;

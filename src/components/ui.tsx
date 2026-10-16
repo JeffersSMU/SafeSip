@@ -8,6 +8,20 @@ import s from './ui.module.css';
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
+/**
+ * A counter that goes up each time `value` changes after the first render. Use it as a React `key`
+ * to re-mount an element (re-running its CSS entrance) only on real changes, not on first paint.
+ */
+export function useChangeKey(value: unknown) {
+  const prev = useRef(value);
+  const n = useRef(0);
+  if (!Object.is(prev.current, value)) {
+    prev.current = value;
+    n.current += 1;
+  }
+  return n.current;
+}
+
 type Variant = 'primary' | 'secondary' | 'safe' | 'danger' | 'dangerOutline' | 'ride' | 'text' | 'plain';
 
 interface BtnProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -67,8 +81,9 @@ const STATUS_ICON: Record<PillStatus, ReactNode> = {
 
 /** Status is never colour-only: label + icon + colour (DESIGN §2.3). */
 export function StatusPill({ status, label }: { status: PillStatus; label?: string }) {
+  const k = useChangeKey(status);
   return (
-    <span className={cx(s.status, s[`s_${status}`])}>
+    <span key={k} className={cx(s.status, s[`s_${status}`], k > 0 && s.changed)}>
       {STATUS_ICON[status]}
       {label ?? (status === 'OUT' ? 'Not out' : status)}
     </span>
@@ -89,6 +104,7 @@ export const STATUS_COLOR: Record<PillStatus, string> = {
 export function SessionPill({ active, label }: { active: boolean; label?: string }) {
   const taps = useRef<number[]>([]);
   const setUi = useUi((u) => u.set);
+  const k = useChangeKey(active);
   const onClick = () => {
     const now = Date.now();
     taps.current = [...taps.current.filter((t) => now - t < 700), now];
@@ -98,7 +114,7 @@ export function SessionPill({ active, label }: { active: boolean; label?: string
     }
   };
   return (
-    <button type="button" className={cx(s.sessionPill, active && s.sessionPillOn)} onClick={onClick} aria-live="polite" aria-label={label}>
+    <button key={k} type="button" className={cx(s.sessionPill, active && s.sessionPillOn, k > 0 && s.changed)} onClick={onClick} aria-live="polite" aria-label={label}>
       <span className={active ? s.dot : s.dotHollow} aria-hidden />
       {active ? 'Active' : 'Inactive'}
     </button>

@@ -894,8 +894,9 @@ function applyBeat(w0: World, n: number, nowMs: number): World {
     }
     case 4: {
       const s = c().session;
-      // The script only re-homes the night to Chupitos when you haven't picked it yourself.
-      const scripted = !!s && s.venue !== 'Chupitos';
+      // B3 is user-driven: any venue change Chloe made herself counts, however she typed or pinned it.
+      // Only an untouched session (Director "next" without editing, or a jump/replay) is scripted.
+      const scripted = !!s && s.venues.length < 2;
       if (scripted && s) w = editSession(w, { venue: 'Chupitos', returnMin: s.returnMin, buddies: s.buddies }, nowMs);
       const dest = c().session?.venuePos ?? CHUPITOS;
       const t0 = Math.max(lastTrailT(w), T(23, 0));

@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle2, Home, MapPin, ShieldAlert } from 'lucide-react';
 import { DEST_ANCHOR, DEST_SIZE, MapView, PIN_ANCHOR_TOP, destHtml, homeHtml, pinHtml, type MapMarker, type PinTone } from '../../components/MapView';
-import { Button, Header } from '../../components/ui';
+import { Button, Header, cx } from '../../components/ui';
 import { CHLOE, personById } from '../../data/cast';
 import { HOME, distanceM } from '../../data/places';
 import { useNow, useUi, useWorld } from '../../store';
@@ -103,7 +103,7 @@ export function MapTab() {
         <p className={s.venueChip} aria-live="polite">
           {session ? <MapPin size={14} aria-hidden /> : <Home size={14} aria-hidden />}
           <strong>{session ? session.venue : 'Home'}</strong>
-          <span>
+          <span key={fmtTime(t)} className={s.tick}>
             · {fmtTime(t)}
             {session && <span className={s.venueChipMuted}>, return by {fmtTime(session.returnMin)}</span>}
           </span>
@@ -118,7 +118,7 @@ export function MapTab() {
                   <span key={r.key} className={s.countRow} style={{ color: r.color }}>
                     {r.icon}
                     <span className={s.countLabel}>{r.label}</span>
-                    <span className={s.countN} style={{ background: r.color }}>
+                    <span key={`${r.key}-${r.n}`} className={cx(s.countN, s.bump)} style={{ background: r.color }}>
                       {r.n}
                     </span>
                   </span>

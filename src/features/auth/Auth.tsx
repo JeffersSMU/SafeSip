@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowLeft, Lock, Plus, ShieldCheck, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Lock, Plus, Trash2, X } from 'lucide-react';
 import { Avatar, Button, IconButton, Modal, cx, ui } from '../../components/ui';
-import { CHLOE, CONTACTS, HELEN, type Person } from '../../data/cast';
+import { CHLOE, CONTACTS, type Person } from '../../data/cast';
 import { useUi } from '../../store';
 import { unlockAudio } from '../../app/sound';
 import s from './auth.module.css';
@@ -12,11 +12,10 @@ export const roleForUsername = (u: string) => (/helen|watcher/i.test(u) ? 'watch
 function Brand() {
   return (
     <div className={s.brand}>
-      <div className={s.logo} aria-hidden>
-        <ShieldCheck size={42} strokeWidth={2.2} />
+      <div aria-hidden>
+        <img src='/icon.png' className={s.logo}></img>
       </div>
-      <p className={s.name}>SafeSip</p>
-      <p className={s.tagline}>Peer Safety Network</p>
+      <p className={s.tagline}>Socialize in peace. Parents at ease.</p>
     </div>
   );
 }
@@ -71,9 +70,6 @@ function Login() {
       <Button variant="secondary" block onClick={() => set({ authScreen: 'signup' })}>
         Create account
       </Button>
-      <p className={s.hint} style={{ textAlign: 'center' }}>
-        Tip: a username containing “helen” opens the Watcher view.
-      </p>
     </form>
   );
 }
@@ -167,7 +163,7 @@ function WatcherSignup({ onDone }: { onDone: () => void }) {
       <PhoneField id="sw-phone" label="Phone" value={phone} onChange={setPhone} />
       <Field id="sw-pass" label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" />
       <div className={ui.field}>
-        <span className={ui.label}>Looking after…</span>
+        <span className={ui.label}>Watching over…</span>
         <div className={s.chips}>
           {picked.map((p) => (
             <div className={s.chip} key={p.id}>
@@ -200,7 +196,7 @@ function WatcherSignup({ onDone }: { onDone: () => void }) {
         </div>
       </div>
       <Button variant="primary" block onClick={onDone}>
-        Create account
+        Create Account
       </Button>
       {picker && (
         <Modal title="Who are you looking after?" onClose={() => setPicker(false)}>
@@ -263,7 +259,7 @@ function Signup() {
         <p className={s.hint} style={{ marginTop: 8 }}>
           {tab === 'user'
             ? 'You go on nights out and share your location with Night Buddies.'
-            : `You look after someone (like ${HELEN.short} looks after ${CHLOE.short}) and get alerts if they need help.`}
+            : `You watch over someone and get alerts if they need help or go missing.`}
         </p>
       </div>
       {tab === 'user' ? <UserSignup onDone={() => login('user')} /> : <WatcherSignup onDone={() => login('watcher')} />}

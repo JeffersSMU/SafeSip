@@ -1,5 +1,6 @@
 import { BellRing, ChevronRight, LogOut, Moon, Plus, Users } from 'lucide-react';
 import { Avatar, Button, Header, SessionPill, StatusPill, cx, ui } from '../../components/ui';
+import { MotionSetting } from '../../components/MotionSetting';
 import { HELEN } from '../../data/cast';
 import { useNow, useUi, useWorld } from '../../store';
 import userCss from '../user/user.module.css';
@@ -88,6 +89,7 @@ export function WatcherMe() {
             <span className={userCss.setLabel}>Linked Users</span>
             <span className={userCss.setValue}>{views.length}</span>
           </div>
+          <MotionSetting />
         </div>
 
         <Button variant="dangerOutline" block onClick={logout}>

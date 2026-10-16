@@ -173,7 +173,7 @@ function Quote() {
         <div className={r.fareLine}>
           <button type="button" className={r.fareRow} onClick={() => setSheet('fare')} aria-label={`Fare ${money(q.total)}. Show fare details`}>
             <span>
-              <span className={r.fare}>{money(q.total)}</span>
+              <span key={q.total} className={cx(r.fare, r.fareBump)}>{money(q.total)}</span>
               <span className={cx(ui.muted, ui.small)} style={{ display: 'block' }}>
                 Upfront · {q.band === 'late' ? 'late-night ×1.5' : q.band === 'peak' ? 'peak ×1.25' : 'standard'} <ChevronRight size={12} aria-hidden style={{ verticalAlign: -1 }} />
               </span>
@@ -261,6 +261,8 @@ function Booked({ ride }: { ride: Ride }) {
       html: pinHtml({ initials: '', tone: 'safe', car: true, name: onTrip ? 'You · on your way' : DRIVER.name, chip: DRIVER.plate }),
       label: 'Driver',
       z: 1000,
+      // Positions update every 250 ms here; a matching glide keeps the car moving smoothly.
+      glideMs: 250,
     });
 
   // On the way home the whole journey stays in view (change request 16).
@@ -287,7 +289,7 @@ function Booked({ ride }: { ride: Ride }) {
             ))}
           </div>
           <p className={ui.muted} style={{ textAlign: 'center' }}>
-            Matching Grab drivers who offer your care amenities...
+            Finding Grab drivers who offer your care amenities...
           </p>
           <Button variant="secondary" block onClick={cancel}>
             Cancel
@@ -297,7 +299,7 @@ function Booked({ ride }: { ride: Ride }) {
       break;
     case 'found':
     case 'arriving':
-      title = ride.stage === 'found' ? 'Driver found' : 'Driver arriving';
+      title = ride.stage === 'found' ? 'Driver Found' : 'Driver Arriving';
       body = (
         <>
           <p className={r.eta}>
@@ -346,7 +348,7 @@ function Booked({ ride }: { ride: Ride }) {
       <div className={r.panelWrap}>
         {/* SOS sits bottom-right just above the info panel for every booked stage (change request 7). */}
         <SosFab className={r.sosDock} />
-        <div className={r.panel} aria-live="polite">
+        <div key={ride.stage} className={r.panel} aria-live="polite">
           {body}
         </div>
       </div>

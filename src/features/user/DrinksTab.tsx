@@ -88,15 +88,15 @@ export function DrinksTab() {
           </h2>
           <div className={s.totals}>
             <div>
-              <span className={s.big}>{c.drinks.length}</span>
+              <span key={c.drinks.length} className={cx(s.big, c.drinks.length > 0 && s.bump)}>{c.drinks.length}</span>
               <span className={cx(ui.muted, ui.small)}>drinks</span>
             </div>
             <div>
-              <span className={s.big}>{total}</span>
+              <span key={total} className={cx(s.big, c.drinks.length > 0 && s.bump)}>{total}</span>
               <span className={cx(ui.muted, ui.small)}>standard drinks</span>
             </div>
             <div>
-              <span className={cx(s.big, s[`p_${pace}`])}>{PACE_LABEL[pace]}</span>
+              <span key={pace} className={cx(s.big, s[`p_${pace}`], c.drinks.length > 0 && s.bump)}>{PACE_LABEL[pace]}</span>
               <span className={cx(ui.muted, ui.small, s.pace)}>
                 Pace
                 <button
