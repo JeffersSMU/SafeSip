@@ -49,27 +49,23 @@ Setup before recording:
 2. On a two-phone recording, set the room code and roles first (Director → room code + role), or open each phone with `?room=G3T3` and log in as Chloe / Helen.
 3. Keep the Director closed while filming — it never shows unless opened.
 
-| Beat | Director does | Chloe taps (then record the result) |
-|---|---|---|
-| **B0** 9:00 PM | — (start state) | Idle Map, no session. |
-| **B1** 9:00 PM | **Next beat** → B1 | On the Map, **Start Night Out** → set Zouk, Sarah, return 2:00 AM → confirm. Helen's map goes active. |
-| **B2** 9:30 PM | **Next beat** → B2 | Chloe and Sarah arrive at Zouk, paired. Nothing to tap. |
-| **B3** 11:00 PM | **Next beat** → B3 | **Edit Session** → change venue to **Chupitos** → save. A "Chupitos · new destination" flag appears; no venue prompt (she changed it herself). |
-| **B4** 11:10 PM | **Next beat** → B4 | They walk to Chupitos. Go to **Drinks → Scan a drink** and log a Martini with the dual camera (back = drink, front = selfie). |
-| **B5** 12:00 AM | **Next beat** → B5 | Sarah leaves for the restroom queue; her pin reads "Apart". Nothing to tap. |
-| **B6** 12:30 AM | **Next beat** → B6 (or **Fire check-in now**) | 30 min apart triggers the well-being check-in. Tap **I'm Okay** — Chloe (and Sarah) go back to Safe. |
-| **B7** 12:35 AM | **Next beat** → B7 | Sarah returns and is "with you" again. Nothing to tap. |
-| **B8** 1:45 AM | **Next beat** → B8 | The "time to head home?" reminder appears. |
-| **B9** 1:55 AM | **Next beat** → B9 | The ride is booked Chupitos → Yishun. **Next beat** now skips through the ride stages (finding a driver → found → arriving → on the trip); the car moves on both phones, ETA 2:30 AM, fare $31.95. |
-| **B10** 2:30 AM | **Next beat** until "Arrived" | On "Have you reached home?", tap **Yes** → the night summary shows on Chloe, "arrived home safely" on Helen. |
+| Director Beat | What to do (User: Chloe) |
+|---|---|
+| **B0** 9:00 PM | Starting Point |
+| **B1** 9:00 PM | On the Map, click **Start Night Out** → set **Zouk** as location, return at **2:00 AM the following day** then click **Done**, and select **Sarah** as Night Buddy → click **Let's Go!** Pause recording, and use the **Director to proceed to B2**. |
+| **B2** 9:30 PM | Chloe and Sarah arrive at Zouk. Nothing to tap. Use the **Director to proceed to B3**. |
+| **B3** 11:00 PM | Click **Edit Session** and change venue to **Chupitos**, then click **Confirm Edits**. A "Chupitos · new destination" flag appears. Use the **Director to proceed to B4**. |
+| **B4** 11:10 PM | Chloe and Sarah walk to Chupitos. Navigate to the **Drinks** tab, and click **Scan a Drink** to use the dual-camera feature. Point at the Martini to log it, alongside a selfie (like BeReal). It should automatically detect a Martini, click **Log it**. Return back to the Map screen. Use the **Director to proceed to B5**. |
+| **B5** 12:00 AM | Sarah leaves for the restroom queue, her pin now updates to "Apart". Nothing to tap. Use the **Director to proceed to B6**. |
+| **B6** 12:30 AM | Long queues at toilet causes them to be 30 min apart, triggering the well-being check-in. Click **I'm Okay**, and Chloe's status updates to "Safe" (assumes that Sarah also received the check-in and clicked 'I'm Okay'). Use the **Director to proceed to B7**. |
+| **B7** 12:35 AM | Sarah returns and is connected back with Chloe again. Nothing to tap. Use the **Director to proceed to B8**. |
+| **B8** 1:45 AM | The "time to head home?" reminder appears. Click on **"Book a Ride"**, then click **"Book Ride"** to book a Grab ride back home. |
+| **B9** 1:55 AM | The ride is booked from Chupitos to Yishun. The Director can be used to skip certain phases of the ride back home (i.e. **finding a driver → found → arriving pick-up point → on the way home**). |
+| **B10** 2:30 AM | Recieve an automated "Have you reached home?" as app detects Chloe has reached home. Click **Yes, I'm home**, and the night's recap is displayed. Click on **"Done"** to return back to the Map screen (inactive session) |
 
-Notes for a clean take:
+The Watcher's device (Helen) should also update and receive real-time alerts/notifications that can be recorded and edited in during recording. Specifically, the Watcher will be notified on Session start, silently notified when Chloe arrives at Zouk, when venue was changed to Chupitos, when Chloe booked a Grab ride back, and when Chloe arrived home safely.
 
-- **SOS** (any point during a session): tap the red SOS button → slide to send. Helen gets the full-screen red alert with sound, then the call buttons appear. The call buttons really dial `tel:` — show them, don't tap them.
-- **Need Help** on the B6 check-in goes straight into the same SOS flow, with no second confirmation.
-- **Alternative to Next beat:** use **Jump to beat** to go straight to any beat; skipped taps are filled in with the scenario defaults. Use this to re-shoot one segment without replaying the whole night.
-- **To demo the venue prompt** (the detection path, not used in the scripted scenario): during an active session use the Director's **Walk to another venue without editing** — the app then prompts Chloe to update her venue.
-- **Sound on Helen's phone:** phones only allow web audio after one tap, so tap Helen's screen once after logging in, and check the silent switch.
+*In the event of an emergency/SOS, the Watcher's device will also be alerted (but not in scope for Easy scenario)*
 
 ## Map tiles
 
