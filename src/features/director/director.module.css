@@ -1,0 +1,70 @@
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.h {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin: 18px 0 6px;
+}
+.beats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.beat {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 34px 70px 1fr 16px;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 0 10px;
+  text-align: left;
+  font-size: 14px;
+}
+.beatOn {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-weight: 700;
+}
+.beatN {
+  font-weight: 800;
+}
+.beatT {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.beatL {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+  font-weight: 650;
+}
+.toggle {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--brand);
+  flex: none;
+  margin-top: 2px;
+}

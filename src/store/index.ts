@@ -1,0 +1,216 @@
+﻿import { useEffect, useState } from 'react';
+import { create } from 'zustand';
+import { broadcastWorld, normaliseRoom, startSync, type SyncStatus } from './sync';
+import { initialWorld, type World } from './world';
+
+export type Role = 'user' | 'watcher';
+export type UserTab = 'map' | 'buddies' | 'drinks' | 'me';
+export type WatcherTab = 'map' | 'me';
+export type ModalKind = 'start' | 'edit' | 'end' | 'sos' | 'director' | null;
+export type FullScreen = 'camera' | 'rideQuote' | null;
+export type Sheet = { kind: 'person'; id: string } | { kind: 'fare' } | { kind: 'payment' } | null;
+
+export interface Toast {
+  id: string;
+  text: string;
+  tone: 'info' | 'safe' | 'warn' | 'danger';
+}
+
+const WORLD_KEY = 'safesip.world.v1';
+const UI_KEY = 'safesip.ui.v1';
+const PHOTOS_KEY = 'safesip.photos.v1';
+
+function load<V>(key: string, fallback: V): V {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as V) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+const deviceId = (() => {
+  const k = 'safesip.device';
+  let id = localStorage.getItem(k);
+  if (!id) {
+    id = Math.random().toString(36).slice(2, 10);
+    localStorage.setItem(k, id);
+  }
+  return id;
+})();
+
+// ---------- world store (synced) ----------
+
+interface WorldStore {
+  world: World;
+  syncStatus: SyncStatus;
+  lastUserPeerMs: number;
+  /** Apply a pure transition; a null/identical result is a no-op. */
+  dispatch: (fn: (w: World, nowMs: number) => World | null) => void;
+  receive: (w: World) => void;
+}
+
+let maxSeenRev = 0;
+
+export const useWorld = create<WorldStore>((set, get) => ({
+  world: load<World>(WORLD_KEY, initialWorld()),
+  syncStatus: 'off',
+  lastUserPeerMs: 0,
+  dispatch: (fn) => {
+    const cur = get().world;
+    const next = fn(cur, Date.now());
+    if (!next || next === cur) return;
+    // Outrank anything seen from peers, so a reset on a lagging phone still wins.
+    next.rev = Math.max(cur.rev, maxSeenRev) + 1;
+    maxSeenRev = next.rev;
+    next.by = deviceId;
+    set({ world: next });
+    localStorage.setItem(WORLD_KEY, JSON.stringify(next));
+    broadcastWorld(next);
+  },
+  receive: (w) => {
+    const cur = get().world;
+    maxSeenRev = Math.max(maxSeenRev, w.rev);
+    if (w.rev > cur.rev || (w.rev === cur.rev && w.by > cur.by)) {
+      set({ world: w });
+      localStorage.setItem(WORLD_KEY, JSON.stringify(w));
+    }
+  },
+}));
+
+export const dispatch = (fn: (w: World, nowMs: number) => World | null) => useWorld.getState().dispatch(fn);
+
+// ---------- local UI store (never synced) ----------
+
+interface UiPersisted {
+  role: Role | null;
+  room: string;
+  extraChild: boolean;
+  checkInInterval: number;
+  quietUpdates: boolean;
+}
+
+interface UiStore extends UiPersisted {
+  authScreen: 'login' | 'signup';
+  userTab: UserTab;
+  watcherTab: WatcherTab;
+  modal: ModalKind;
+  fullscreen: FullScreen;
+  sheet: Sheet;
+  editPreset: { venue?: string; addBuddy?: string } | null;
+  toasts: Toast[];
+  shake: number;
+  watcherSelected: string;
+  ackEmergency: string | null;
+  /** SOS flow closed with X: the alert stays active, the full-screen flow is hidden. */
+  sosHiddenId: string | null;
+  photos: Record<string, { drink: string; selfie: string }>;
+  set: (p: Partial<UiStore>) => void;
+  toast: (text: string, tone?: Toast['tone']) => void;
+  login: (role: Role) => void;
+  logout: () => void;
+}
+
+const UI_DEFAULTS: UiPersisted = { role: null, room: '', extraChild: false, checkInInterval: 30, quietUpdates: true };
+const persisted: UiPersisted = { ...UI_DEFAULTS, ...load<Partial<UiPersisted>>(UI_KEY, {}) };
+
+function initialParams() {
+  const q = new URLSearchParams(location.search);
+  const role = q.get('role');
+  const room = q.get('room');
+  return {
+    role: role === 'user' || role === 'watcher' ? (role as Role) : undefined,
+    room: room !== null ? normaliseRoom(room) : undefined,
+    beat: q.get('beat'),
+  };
+}
+
+export const startParams = initialParams();
+
+export const useUi = create<UiStore>((set, get) => ({
+  ...persisted,
+  role: startParams.role ?? persisted.role,
+  room: startParams.room ?? persisted.room,
+  authScreen: 'login',
+  userTab: 'map',
+  watcherTab: 'map',
+  modal: null,
+  fullscreen: null,
+  sheet: null,
+  editPreset: null,
+  toasts: [],
+  shake: 0,
+  watcherSelected: 'chloe',
+  ackEmergency: null,
+  sosHiddenId: null,
+  photos: load(PHOTOS_KEY, {}),
+  set: (p) => set(p),
+  toast: (text, tone = 'info') => {
+    const id = Math.random().toString(36).slice(2);
+    set({ toasts: [...get().toasts.slice(-2), { id, text, tone }] });
+    window.setTimeout(() => set({ toasts: get().toasts.filter((t) => t.id !== id) }), 3200);
+  },
+  login: (role) => set({ role, userTab: 'map', watcherTab: 'map', modal: null, fullscreen: null, sheet: null }),
+  logout: () => set({ role: null, authScreen: 'login', modal: null, fullscreen: null, sheet: null }),
+}));
+
+useUi.subscribe((s) => {
+  const p: UiPersisted = { role: s.role, room: s.room, extraChild: s.extraChild, checkInInterval: s.checkInInterval, quietUpdates: s.quietUpdates };
+  localStorage.setItem(UI_KEY, JSON.stringify(p));
+});
+
+export function savePhotos(id: string, drink: string, selfie: string) {
+  const photos = { ...useUi.getState().photos, [id]: { drink, selfie } };
+  // Keep only the newest 8 pairs so localStorage never overflows.
+  const keys = Object.keys(photos);
+  for (const k of keys.slice(0, Math.max(0, keys.length - 8))) delete photos[k];
+  useUi.setState({ photos });
+  try {
+    localStorage.setItem(PHOTOS_KEY, JSON.stringify(photos));
+  } catch {
+    /* storage full: photos stay in memory for this session */
+  }
+}
+
+// ---------- sync wiring ----------
+
+export function connectSync(room: string) {
+  startSync(
+    {
+      deviceId,
+      getWorld: () => useWorld.getState().world,
+      onWorld: (w) => useWorld.getState().receive(w),
+      onStatus: (s) => useWorld.setState({ syncStatus: s }),
+      onPeer: (role) => {
+        if (role === 'user') useWorld.setState({ lastUserPeerMs: Date.now() });
+      },
+      getRole: () => useUi.getState().role,
+    },
+    room,
+  );
+}
+
+// Other tabs in this browser write localStorage too; pick that up as a fallback path.
+window.addEventListener('storage', (e) => {
+  if (e.key === WORLD_KEY && e.newValue) {
+    try {
+      useWorld.getState().receive(JSON.parse(e.newValue) as World);
+    } catch {
+      /* ignore malformed */
+    }
+  }
+});
+
+// ---------- hooks ----------
+
+/** Re-render on an interval; returns the current epoch ms. */
+export function useNow(intervalMs = 1000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+  return now;
+}
+
+export { deviceId };
