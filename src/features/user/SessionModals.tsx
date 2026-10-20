@@ -20,7 +20,7 @@ type ListTab = 'recent' | 'favourites' | 'all';
 const FAVOURITES = new Set(CONTACTS.filter((c) => c.favourite).map((c) => c.id));
 
 /** "Tonight's Session" form shared by Start and Edit (DESIGN §5.2). */
-export function SessionModal({ mode, layout = 'expanded' }: { mode: 'start' | 'edit'; layout?: 'expanded' | 'accordion' }) {
+export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode: 'start' | 'edit'; layout?: 'expanded' | 'accordion'; onEditSaved?: (values: { venue: string; returnMin: number }) => void }) {
   const session = useWorld((w) => w.world.chloe.session);
   const simNowMin = useWorld((w) => nowMin(w.world));
   const { editPreset, set, toast } = useUi();
@@ -80,7 +80,10 @@ export function SessionModal({ mode, layout = 'expanded' }: { mode: 'start' | 'e
     if (mode === 'start') {
       dispatch((w, n) => startSession(w, input, n));
       set({ userTab: 'map' });
-    } else dispatch((w, n) => editSession(w, input, n));
+    } else {
+      dispatch((w, n) => editSession(w, input, n));
+      onEditSaved?.({ venue: input.venue, returnMin: input.returnMin });
+    }
     close();
   };
 

@@ -1,0 +1,68 @@
+.resultScreen {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.resultCard {
+  width: 100%;
+  padding: 28px 22px 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow-2);
+  text-align: center;
+}
+
+.resultIcon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 30px;
+  font-weight: 750;
+}
+
+.resultIconSuccess {
+  color: var(--safe);
+  background: color-mix(in srgb, var(--safe) 14%, white);
+}
+
+.resultIconRetry {
+  color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.resultCard h1 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1.25;
+}
+
+.resultCard p {
+  margin: 0 0 22px;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.backButton {
+  width: 100%;
+  min-height: 50px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--brand);
+  color: white;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.backButton:active {
+  transform: scale(0.98);
+}

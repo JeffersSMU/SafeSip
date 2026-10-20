@@ -11,6 +11,8 @@ export default defineConfig({
       input: {
         main: 'index.html',
         abTesting: 'a-b-testing/index.html',
+        abTestingSuccess: 'a-b-testing/success/index.html',
+        abTestingUnsuccessful: 'a-b-testing/unsuccessful/index.html',
       },
     },
   },
