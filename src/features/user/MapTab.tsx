@@ -15,8 +15,9 @@ const WORD: Record<Wellbeing, string> = { SAFE: 'Safe', APART: 'Apart', MISSING:
 /** Space the overlays cover, so fitting keeps pins visible. */
 const INSETS_ACTIVE = { top: 48, bottom: 170 };
 const INSETS_IDLE = { top: 48, bottom: 80 };
+const ignoreAction = () => {};
 
-export function MapTab() {
+export function MapTab({ editOnly = false }: { editOnly?: boolean }) {
   const now = useNow(500);
   const w = useWorld((x) => x.world);
   const set = useUi((u) => u.set);
@@ -131,9 +132,7 @@ export function MapTab() {
                 <Button variant="secondary" block className={s.editBtn} onClick={() => set({ modal: 'edit', editPreset: null })}>
                   Edit Session
                 </Button>
-                <Button variant="primary" block onClick={() => set({ modal: 'end' })}>
-                  End Session
-                </Button>
+                <Button variant="primary" block onClick={editOnly ? ignoreAction : () => set({ modal: 'end' })}>End Session</Button>
               </div>
             </>
           ) : (

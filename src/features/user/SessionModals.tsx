@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Calendar, Car, Clock, Footprints, MapPin, Search, Star } from 'lucide-react';
+import { ArrowLeft, Calendar, Car, ChevronDown, Clock, Footprints, MapPin, Search, Star } from 'lucide-react';
 import { DEST_ANCHOR, DEST_SIZE, MapView, destHtml, type MapMarker } from '../../components/MapView';
 import { Avatar, Button, Modal, cx, ui } from '../../components/ui';
 import { TimeWheel } from '../../components/TimeWheel';
@@ -20,7 +20,7 @@ type ListTab = 'recent' | 'favourites' | 'all';
 const FAVOURITES = new Set(CONTACTS.filter((c) => c.favourite).map((c) => c.id));
 
 /** "Tonight's Session" form shared by Start and Edit (DESIGN §5.2). */
-export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
+export function SessionModal({ mode, layout = 'expanded' }: { mode: 'start' | 'edit'; layout?: 'expanded' | 'accordion' }) {
   const session = useWorld((w) => w.world.chloe.session);
   const simNowMin = useWorld((w) => nowMin(w.world));
   const { editPreset, set, toast } = useUi();
@@ -43,6 +43,7 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
   });
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<ListTab>('recent');
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({ location: false, return: false, buddies: false });
 
   const suggestions = venue.trim() && venueFocus ? VENUES.filter((v) => v.name.toLowerCase().includes(venue.trim().toLowerCase()) && v.name !== venue) : [];
   const list = useMemo(() => {
@@ -63,6 +64,16 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
   };
 
   const valid = venue.trim().length > 0 && buddies.length > 0 && !returnInPast;
+  const section = (id: keyof typeof openSections, title: string, summary: string, content: React.ReactNode) =>
+    layout === 'expanded' ? content : (
+      <section className={s.accordion}>
+        <button type="button" className={s.accordionTrigger} aria-expanded={openSections[id]} onClick={() => setOpenSections((v) => ({ ...v, [id]: !v[id] }))}>
+          <span className={s.accordionHeading}>{title}<small>{summary}</small></span>
+          <ChevronDown size={20} className={cx(s.accordionChevron, openSections[id] && s.accordionChevronOpen)} aria-hidden />
+        </button>
+        {openSections[id] && <div className={s.accordionBody}>{content}</div>}
+      </section>
+    );
   const close = () => set({ modal: null, editPreset: null });
   const submit = () => {
     const input = { venue: venue.trim(), venuePos, returnMin, buddies };
@@ -77,7 +88,7 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
     <>
     <Modal title={mode === 'start' ? "Tonight's Session" : 'Edit Session'} onClose={close}>
       <div className={s.form}>
-        <div className={ui.field}>
+        {section('location', 'Target location', venue || 'Choose a venue', <div className={ui.field}>
           <label className={ui.label} htmlFor="venue">
             Target location / venue
           </label>
@@ -116,9 +127,9 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
           <Button variant="text" style={{ alignSelf: 'flex-start' }} onClick={() => setPicking(true)}>
             <MapPin size={16} /> Select from map
           </Button>
-        </div>
+        </div>)}
 
-        <div className={ui.field}>
+        {section('return', 'Estimated return', `${returnDay === todayIdx ? 'Today' : 'Tomorrow'} · ${fmtTime(returnMin)}`, <div className={ui.field}>
           <span className={ui.label} id="ret-lbl">
             Estimated return
           </span>
@@ -153,9 +164,9 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
           <p className={cx(ui.small, returnInPast ? s.fieldError : ui.muted)} aria-live="polite">
             {returnInPast ? 'Return time is in the past. Pick a later time or tomorrow.' : `Back by ${fmtDay(returnMin)}, ${fmtTime(returnMin)}`}
           </p>
-        </div>
+        </div>)}
 
-        <div className={ui.field}>
+        {section('buddies', 'Night Buddies', buddies.length ? buddies.map((id) => CONTACTS.find((c) => c.id === id)?.short ?? id).join(', ') : 'Choose at least one', <div className={ui.field}>
           <span className={ui.label}>Night Buddies</span>
           <div style={{ position: 'relative' }}>
             <Search size={18} aria-hidden style={{ position: 'absolute', left: 14, top: 17, color: 'var(--text-muted)' }} />
@@ -199,7 +210,7 @@ export function SessionModal({ mode }: { mode: 'start' | 'edit' }) {
             {list.length === 0 && <p className={cx(ui.muted, ui.small)}>No SafeSip contacts match.</p>}
           </div>
           <p className={cx(ui.muted, ui.small)}>Only contacts who use SafeSip are listed.</p>
-        </div>
+        </div>)}
 
         <Button variant="primary" block disabled={!valid} onClick={submit}>
           {mode === 'start' ? "Let's Go!" : 'Confirm Edits'}

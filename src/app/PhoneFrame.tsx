@@ -38,7 +38,7 @@ function StatusBar() {
  * Phones: full screen. Desktop: centred 390×844 frame whose status bar shows the simulated time,
  * so desktop recordings show the scenario clock (DESIGN §2.4).
  */
-export function PhoneFrame({ children }: { children: ReactNode }) {
+export function PhoneFrame({ children, showRecordingHelp = true }: { children: ReactNode; showRecordingHelp?: boolean }) {
   const desktop = useDesktop();
   if (!desktop) return <div className={s.phone}>{children}</div>;
   return (
@@ -50,14 +50,14 @@ export function PhoneFrame({ children }: { children: ReactNode }) {
             <div className={s.app}>{children}</div>
           </div>
         </div>
-        <aside className={s.side}>
+        {showRecordingHelp && <aside className={s.side}>
           <strong style={{ color: 'var(--text)' }}>Recording shortcuts</strong>
           <span>
             <kbd>D</kbd> Demo Director · <kbd>→</kbd> next beat · <kbd>R</kbd> reset
           </span>
           <span>Or triple-tap the status pill under the page title.</span>
           <span>Open a second tab as Helen (username “helen”) to watch both sides sync.</span>
-        </aside>
+        </aside>}
       </div>
     </div>
   );

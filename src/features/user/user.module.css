@@ -475,6 +475,30 @@
   flex-direction: column;
   gap: 16px;
 }
+.accordion {
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.accordionTrigger {
+  width: 100%;
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 0;
+  background: var(--surface);
+  text-align: left;
+}
+.accordionHeading { display: flex; flex-direction: column; gap: 3px; font-weight: 700; }
+.accordionHeading small { color: var(--text-muted); font-size: 13px; font-weight: 500; }
+.accordionChevron { color: var(--text-muted); transition: transform 160ms ease; }
+.accordionChevronOpen { transform: rotate(180deg); }
+.accordionBody { padding: 0 14px 14px; border-top: 1px solid var(--line); }
+.accordionBody > :first-child { padding-top: 14px; }
 .suggest {
   border: 1.5px solid var(--line);
   border-radius: 14px;

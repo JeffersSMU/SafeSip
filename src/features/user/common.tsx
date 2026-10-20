@@ -17,7 +17,7 @@ export function openRide() {
 }
 
 /** The red SOS button. Position comes from `className` (shell float, or docked above a panel). */
-export function SosFab({ className }: { className?: string }) {
+export function SosFab({ className, inactive = false }: { className?: string; inactive?: boolean }) {
   const sos = useWorld((w) => w.world.chloe.sos);
   const set = useUi((u) => u.set);
   return (
@@ -25,7 +25,7 @@ export function SosFab({ className }: { className?: string }) {
       type="button"
       className={cx(s.sos, sos && s.sosActive, className)}
       aria-label={sos ? 'SOS alert active, open it' : 'SOS emergency'}
-      onClick={() => set(sos ? { sosHiddenId: null } : { modal: 'sos' })}
+      onClick={() => { if (!inactive) set(sos ? { sosHiddenId: null } : { modal: 'sos' }); }}
     >
       <Phone size={20} aria-hidden />
       SOS

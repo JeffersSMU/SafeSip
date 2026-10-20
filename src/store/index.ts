@@ -28,9 +28,10 @@ export interface PhotoPair {
   selfieRecap?: string;
 }
 
-const WORLD_KEY = 'safesip.world.v2';
-const UI_KEY = 'safesip.ui.v1';
-const PHOTOS_KEY = 'safesip.photos.v1';
+const AB_TEST_MODE = location.pathname.startsWith('/a-b-testing');
+const WORLD_KEY = AB_TEST_MODE ? 'safesip.ab-testing.world.v1' : 'safesip.world.v2';
+const UI_KEY = AB_TEST_MODE ? 'safesip.ab-testing.ui.v1' : 'safesip.ui.v1';
+const PHOTOS_KEY = AB_TEST_MODE ? 'safesip.ab-testing.photos.v1' : 'safesip.photos.v1';
 
 function load<V>(key: string, fallback: V): V {
   try {
