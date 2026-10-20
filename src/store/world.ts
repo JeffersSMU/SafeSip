@@ -109,6 +109,8 @@ export interface ChildState {
   arrival: boolean;
   summary: Summary | null;
   venuePrompt: string | null;
+  /** Venue detected after Chloe has stopped there; the session venue stays unchanged until confirmed. */
+  detectedVenue: string | null;
   homeReminder: boolean;
   apartSinceMin: number | null;
   lastSession: string | null;
@@ -152,9 +154,23 @@ export interface World {
   by: string;
   clock: Clock;
   beat: number;
+  /** Short, shared location animation used by the Director's B4 walk. */
+  locationTransition: LocationTransition | null;
   chloe: ChildState;
   buddies: Record<string, BuddyState>;
   events: WorldEvent[];
+}
+
+export interface LocationTransition {
+  from: LatLng;
+  to: LatLng;
+  targetVenue: string;
+  startedMs: number;
+  durationMs: number;
+  startMin: number;
+  endMin: number;
+  buddyFrom: Record<string, LatLng>;
+  buddyTo: Record<string, LatLng>;
 }
 
 // ---------- constants ----------
@@ -191,6 +207,7 @@ export function initialWorld(nowMs = Date.now()): World {
     by: '',
     clock: clockAt(START_MIN, FROZEN, nowMs),
     beat: 0,
+    locationTransition: null,
     chloe: {
       session: null,
       pos: HOME,
@@ -206,6 +223,7 @@ export function initialWorld(nowMs = Date.now()): World {
       arrival: false,
       summary: null,
       venuePrompt: null,
+      detectedVenue: null,
       homeReminder: false,
       apartSinceMin: null,
       lastSession: 'Last Night Out: Sat, 11 Oct · home safe 1:12 AM',
@@ -221,6 +239,14 @@ export function initialWorld(nowMs = Date.now()): World {
 
 const clone = <V>(v: V): V => structuredClone(v);
 export const nowMin = (w: World, nowMs = Date.now()) => simNow(w.clock, nowMs);
+
+function transitionProgress(t: LocationTransition, nowMs: number) {
+  return Math.min(1, Math.max(0, (nowMs - t.startedMs) / t.durationMs));
+}
+
+function interpolate(from: LatLng, to: LatLng, progress: number): LatLng {
+  return [from[0] + (to[0] - from[0]) * progress, from[1] + (to[1] - from[1]) * progress];
+}
 
 function addEvent(w: World, e: Omit<WorldEvent, 'ms' | 'simMin' | 'userId' | 'tone'> & { tone?: Tone }, nowMs: number) {
   if (w.events.some((x) => x.id === e.id)) return;
@@ -273,7 +299,15 @@ export const checkInOpen = (c: ChildState) => !!c.checkIn && c.checkIn.answered 
 
 export function buddyDistanceM(w: World, id: string, nowMs = Date.now()) {
   const b = w.buddies[id];
-  return b ? distanceM(b.pos, chloePos(w, nowMs)) : 0;
+  return b ? distanceM(buddyPos(w, id, nowMs), chloePos(w, nowMs)) : 0;
+}
+
+/** A buddy travelling with Chloe follows the same short Director walk animation. */
+export function buddyPos(w: World, id: string, nowMs = Date.now()): LatLng {
+  const t = w.locationTransition;
+  const from = t?.buddyFrom[id];
+  const to = t?.buddyTo[id];
+  return t && from && to ? interpolate(from, to, transitionProgress(t, nowMs)) : w.buddies[id]?.pos ?? HOME;
 }
 
 /** A buddy's status and short label as Chloe sees them. */
@@ -310,6 +344,8 @@ export function watcherReason(w: World, c: ChildState, nowMs = Date.now()): stri
   if (s === 'SOS' && c.sos) return `${CHLOE.short} asked for help ${fmtTime(c.sos.simMin)}`;
   if (s === 'MISSING') return 'Unresponsive to last well-being check';
   if (c.ride) return c.ride.stage === 'arrived' ? 'Ride arrived' : `In a Grab ride · ETA ${fmtTime(c.ride.etaMin)}`;
+  if (w.locationTransition) return 'In transit · live location updating';
+  if (c.detectedVenue) return `Arrived at ${c.detectedVenue} · venue update pending`;
   if (c.checkIn?.answered === 'ok') return `Answered check-in @ ${fmtTime(c.checkIn.simMin)}`;
   if (c.session?.buddies.some((b) => w.buddies[b]?.withChloe)) return 'With her Night Buddy';
   if (c.session?.buddies.some((b) => w.buddies[b]?.enRoute)) return `Heading to ${c.session.venue}`;
@@ -384,7 +420,31 @@ export function ridePositions(r: Ride, nowMs = Date.now()): { car: LatLng; path:
 export function chloePos(w: World, nowMs = Date.now()): LatLng {
   const r = w.chloe.ride;
   if (r && (r.stage === 'trip' || r.stage === 'arrived')) return ridePositions(r, nowMs).car;
+  if (w.locationTransition) return interpolate(w.locationTransition.from, w.locationTransition.to, transitionProgress(w.locationTransition, nowMs));
   return w.chloe.pos;
+}
+
+function finishLocationTransition(w0: World, nowMs: number): World {
+  const w = clone(w0);
+  const t = w.locationTransition;
+  if (!t) return w;
+  w.chloe.pos = t.to;
+  for (const [id, pos] of Object.entries(t.buddyTo)) {
+    const b = w.buddies[id];
+    if (b) {
+      b.pos = pos;
+      b.updatedMin = t.endMin;
+    }
+  }
+  setTime(w, t.endMin, nowMs);
+  w.locationTransition = null;
+  return w;
+}
+
+/** Finish the Director walk when its compressed ten-minute timeline reaches 11:10 PM. */
+export function tickLocationTransition(w0: World, nowMs = Date.now()): World | null {
+  const t = w0.locationTransition;
+  return t && nowMs - t.startedMs >= t.durationMs ? finishLocationTransition(w0, nowMs) : null;
 }
 
 /** Trail points within the last 60 sim minutes, including the live ride path. */
@@ -393,7 +453,7 @@ export function trail60(w: World, nowMs = Date.now()): LatLng[] {
   const pts = w.chloe.trail.filter((p) => p.t >= now - 60 && p.t <= now + 0.01).map((p) => p.p);
   const r = w.chloe.ride;
   if (r && (r.stage === 'trip' || r.stage === 'arrived')) pts.push(...ridePositions(r, nowMs).path);
-  else if (w.chloe.session) pts.push(w.chloe.pos);
+  else if (w.chloe.session) pts.push(chloePos(w, nowMs));
   return pts;
 }
 
@@ -479,6 +539,7 @@ export function editSession(w0: World, input: SessionInput, nowMs = Date.now()):
   s.buddies = input.buddies;
   for (const b of added) ensureBuddy(w, b, now, { withChloe: true });
   w.chloe.venuePrompt = null;
+  if (venueChanged) w.chloe.detectedVenue = null;
   addEvent(
     w,
     {
@@ -500,6 +561,14 @@ export function dismissVenuePrompt(w0: World): World {
   const w = clone(w0);
   w.chloe.venuePrompt = null;
   return w;
+}
+
+/** Accept the detected venue without opening the full Edit Session form. */
+export function acceptVenuePrompt(w0: World, nowMs = Date.now()): World {
+  const s = w0.chloe.session;
+  const venue = w0.chloe.venuePrompt;
+  if (!s || !venue) return w0;
+  return editSession(w0, { venue, returnMin: s.returnMin, buddies: s.buddies }, nowMs);
 }
 
 /**
@@ -533,10 +602,12 @@ function closeSession(w: World) {
   w.chloe.sos = null;
   w.chloe.arrival = false;
   w.chloe.venuePrompt = null;
+  w.chloe.detectedVenue = null;
   w.chloe.homeReminder = false;
   w.chloe.apartSinceMin = null;
   w.chloe.okUntilMin = null;
   w.chloe.trail = [];
+  w.locationTransition = null;
   for (const b of Object.values(w.buddies)) {
     b.withChloe = false;
     b.enRoute = false;
@@ -713,12 +784,12 @@ export function quoteNow(w: World, amenities: Amenities, km = ROUTE_HOME_KM, now
   return quoteFare(km, Math.round(nowMin(w, nowMs)), amenities);
 }
 
-/** Opening the ride flow from the B8 reminder compresses time to the scenario booking time (1:55 AM). */
+/** Opening the ride flow from the B9 reminder compresses time to the scenario booking time (1:55 AM). */
 export function enterRideQuote(w0: World, nowMs = Date.now()): World {
   const w = clone(w0);
   w.chloe.homeReminder = false;
   const t = T(1, 55, true);
-  if (w.beat === 8 && nowMin(w, nowMs) < t) {
+  if (w.beat === 9 && nowMin(w, nowMs) < t) {
     dwell(w, w.chloe.pos, lastTrailT(w), t);
     bringBuddies(w, t);
     setTime(w, t, nowMs);
@@ -744,7 +815,7 @@ export function bookRide(w0: World, amenities: Amenities, nowMs = Date.now(), pi
     pickupMin: booked + 5,
     etaMin: booked + 5 + fare.minutes,
   };
-  w.beat = Math.max(w.beat, 9);
+  w.beat = Math.max(w.beat, 10);
   return w;
 }
 
@@ -786,7 +857,7 @@ export function advanceRide(w0: World, nowMs = Date.now()): World {
     route.forEach((p, i) => w.chloe.trail.push({ p, t: r.pickupMin + ((r.etaMin - r.pickupMin) * (i + 1)) / route.length }));
     w.chloe.pos = drop.pos;
     w.chloe.arrival = true;
-    w.beat = 10;
+    w.beat = 11;
   }
   return w;
 }
@@ -849,14 +920,15 @@ export const BEATS: { n: number; time: string; label: string }[] = [
   { n: 0, time: '9:00 PM', label: 'Inactive at home' },
   { n: 1, time: '9:00 PM', label: 'Start session: meet Sarah at Zouk · 2:00 AM' },
   { n: 2, time: '9:30 PM', label: 'Both arrive at Zouk, paired with Sarah' },
-  { n: 3, time: '11:00 PM', label: 'Chloe edits venue → Chupitos (Edit Session)' },
-  { n: 4, time: '11:10 PM', label: 'Walk to Chupitos · log a Martini' },
-  { n: 5, time: '12:00 AM', label: 'Sarah leaves (restroom queue)' },
-  { n: 6, time: '12:30 AM', label: 'Apart 30 min → well-being check-in' },
-  { n: 7, time: '12:35 AM', label: 'Sarah returns' },
-  { n: 8, time: '1:45 AM', label: '“Time to head home?” reminder' },
-  { n: 9, time: '1:55 AM', label: 'Ride booked Chupitos → Yishun' },
-  { n: 10, time: '2:30 AM', label: 'Arrived home → “Have you reached home?”' },
+  { n: 3, time: '11:00 PM', label: 'Spontaneous thought: head to Chupitos' },
+  { n: 4, time: '11:00–11:10 PM', label: 'Walk to Chupitos · live location updates' },
+  { n: 5, time: '11:13 PM', label: 'Stop detected · prompt to update venue · Log a martini' },
+  { n: 6, time: '12:00 AM', label: 'Sarah leaves (restroom queue)' },
+  { n: 7, time: '12:30 AM', label: 'Apart 30 min → well-being check-in' },
+  { n: 8, time: '12:35 AM', label: 'Sarah returns' },
+  { n: 9, time: '1:45 AM', label: '“Time to head home?” reminder' },
+  { n: 10, time: '1:55 AM', label: 'Ride booked Chupitos → Yishun' },
+  { n: 11, time: '2:30 AM', label: 'Arrived home → “Have you reached home?”' },
 ];
 
 function applyBeat(w0: World, n: number, nowMs: number): World {
@@ -883,36 +955,60 @@ function applyBeat(w0: World, n: number, nowMs: number): World {
       return w;
     }
     case 3: {
-      // Time moves to 11:00 PM; Chloe then changes the venue herself in Edit Session (no prompt).
+      // The thought is spontaneous; the session venue stays Zouk and nobody is notified.
       const t = T(23, 0);
       dwell(w, c().pos, lastTrailT(w), t);
       bringBuddies(w, t);
       setTime(w, t, nowMs);
       w.chloe.venuePrompt = null;
+      w.chloe.detectedVenue = null;
       w.beat = 3;
       return w;
     }
     case 4: {
-      const s = c().session;
-      // B3 is user-driven: any venue change Chloe made herself counts, however she typed or pinned it.
-      // Only an untouched session (Director "next" without editing, or a jump/replay) is scripted.
-      const scripted = !!s && s.venues.length < 2;
-      if (scripted && s) w = editSession(w, { venue: 'Chupitos', returnMin: s.returnMin, buddies: s.buddies }, nowMs);
-      const dest = c().session?.venuePos ?? CHUPITOS;
-      const t0 = Math.max(lastTrailT(w), T(23, 0));
-      walk(w, dest, t0, t0 + 4, 4);
-      dwell(w, dest, t0 + 4, T(23, 10));
-      bringBuddies(w, T(23, 10));
-      setTime(w, T(23, 10), nowMs);
+      const startMin = T(23, 0);
+      const endMin = T(23, 10);
+      const from = c().pos;
+      const target = CHUPITOS;
+      const buddyFrom: Record<string, LatLng> = {};
+      const buddyTo: Record<string, LatLng> = {};
+      for (const id of c().session?.buddies ?? []) {
+        const b = w.buddies[id];
+        if (!b?.withChloe) continue;
+        buddyFrom[id] = b.pos;
+        buddyTo[id] = beside(target);
+      }
+      walk(w, target, startMin, endMin, 20);
+      w.locationTransition = {
+        from,
+        to: target,
+        targetVenue: 'Chupitos',
+        startedMs: nowMs,
+        durationMs: 6000,
+        startMin,
+        endMin,
+        buddyFrom,
+        buddyTo,
+      };
+      setTime(w, startMin, nowMs, (endMin - startMin) / (6000 / 60000));
       w.chloe.venuePrompt = null;
-      // B4 is user-driven (DESIGN §1.2): when you've set the venue yourself, logging is left to the
-      // dual camera, so the drink isn't already there before you scan it.
-      if (scripted && !c().drinks.some((d) => d.scanned))
-        w = logDrink(w, { id: 'martini-b4', name: MARTINI.name, detail: `${MARTINI.size} · ~${MARTINI.abv}% ABV`, std: MARTINI.std, emoji: MARTINI.emoji, scanned: true }, nowMs);
+      w.chloe.detectedVenue = null;
       w.beat = 4;
       return w;
     }
     case 5: {
+      // Stable arrival is detected only after the walk completes; the session venue remains Zouk
+      // until Chloe chooses to update it in the prompt.
+      if (w.locationTransition) w = finishLocationTransition(w, nowMs);
+      const t = T(23, 13);
+      dwell(w, c().pos, lastTrailT(w), t);
+      setTime(w, t, nowMs);
+      w.chloe.detectedVenue = 'Chupitos';
+      w.chloe.venuePrompt = 'Chupitos';
+      w.beat = 5;
+      return w;
+    }
+    case 6: {
       const t = T(0, 0, true);
       dwell(w, c().pos, lastTrailT(w), t);
       setTime(w, t, nowMs);
@@ -926,18 +1022,18 @@ function applyBeat(w0: World, n: number, nowMs: number): World {
         sarah.updatedMin = t;
       }
       w.chloe.apartSinceMin = t;
-      w.beat = 5;
-      return w;
-    }
-    case 6: {
-      const t = T(0, 30, true);
-      dwell(w, c().pos, lastTrailT(w), t);
-      setTime(w, t, nowMs);
-      w = fireCheckIn(w, nowMs);
       w.beat = 6;
       return w;
     }
     case 7: {
+      const t = T(0, 30, true);
+      dwell(w, c().pos, lastTrailT(w), t);
+      setTime(w, t, nowMs);
+      w = fireCheckIn(w, nowMs);
+      w.beat = 7;
+      return w;
+    }
+    case 8: {
       if (checkInOpen(c())) w = answerCheckInOk(w, nowMs);
       if (c().sos) w = cancelSos(w, nowMs);
       const t = T(0, 35, true);
@@ -952,28 +1048,28 @@ function applyBeat(w0: World, n: number, nowMs: number): World {
         sarah.updatedMin = t;
       }
       w.chloe.apartSinceMin = null;
-      w.beat = 7;
-      addEvent(w, { id: 'b7-u', to: ['user'], text: 'Sarah is back with you', tone: 'safe' }, nowMs);
+      w.beat = 8;
+      addEvent(w, { id: 'b8-u', to: ['user'], text: 'Sarah is back with you', tone: 'safe' }, nowMs);
       return w;
     }
-    case 8: {
+    case 9: {
       const t = T(1, 45, true);
       dwell(w, c().pos, lastTrailT(w), t);
       setTime(w, t, nowMs);
       w.chloe.homeReminder = true;
-      w.beat = 8;
-      return w;
-    }
-    case 9: {
-      w = enterRideQuote(w, nowMs);
-      if (!c().ride) w = bookRide(w, ALL_AMENITIES, nowMs);
       w.beat = 9;
       return w;
     }
     case 10: {
+      w = enterRideQuote(w, nowMs);
+      if (!c().ride) w = bookRide(w, ALL_AMENITIES, nowMs);
+      w.beat = 10;
+      return w;
+    }
+    case 11: {
       let guard = 0;
       while (c().ride && c().ride!.stage !== 'arrived' && guard++ < 6) w = advanceRide(w, nowMs);
-      w.beat = 10;
+      w.beat = 11;
       return w;
     }
   }
@@ -984,8 +1080,16 @@ function applyBeat(w0: World, n: number, nowMs: number): World {
 export function goToBeat(w0: World, n: number, nowMs = Date.now()): World {
   let w = applyBeat(w0, 0, nowMs);
   for (let i = 1; i <= n; i++) {
+    if (w.locationTransition && i > 1) w = finishLocationTransition(w, nowMs);
     if (i === n) w.events.forEach((e) => (e.replayed = true));
     w = applyBeat(w, i, nowMs);
+    // A jump beyond B5 supplies the skipped user choices: confirm Chupitos and log the scenario drink.
+    if (i === 5 && n > 5 && w.chloe.session) {
+      const s = w.chloe.session;
+      w = editSession(w, { venue: 'Chupitos', returnMin: s.returnMin, buddies: s.buddies }, nowMs);
+      if (!w.chloe.drinks.some((d) => d.scanned))
+        w = logDrink(w, { id: 'martini-b5', name: MARTINI.name, detail: `${MARTINI.size} · ~${MARTINI.abv}% ABV`, std: MARTINI.std, emoji: MARTINI.emoji, scanned: true }, nowMs);
+    }
   }
   if (n === 0) w.events = [];
   return w;
@@ -994,9 +1098,10 @@ export function goToBeat(w0: World, n: number, nowMs = Date.now()): World {
 /** Director "Next beat": advance the ride stage while one is running, else apply the next beat. */
 export function nextBeat(w0: World, nowMs = Date.now()): World {
   const c = w0.chloe;
+  if (w0.locationTransition) return w0;
   if (c.summary) return finishSummary(w0);
   if (c.arrival) return confirmArrival(w0, true, nowMs);
   if (c.ride && c.ride.stage !== 'arrived') return advanceRide(w0, nowMs);
-  if (w0.beat >= 10) return w0;
+  if (w0.beat >= 11) return w0;
   return applyBeat(w0, w0.beat + 1, nowMs);
 }

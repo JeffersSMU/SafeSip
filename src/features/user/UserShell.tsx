@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { GlassWater, MapPin, User, Users } from 'lucide-react';
 import { BottomNav, Banner, Button, cx, ui, type NavItem } from '../../components/ui';
 import { dispatch, useUi, useWorld, type UserTab } from '../../store';
-import { checkInOpen, dismissHomeReminder, dismissVenuePrompt } from '../../store/world';
+import { acceptVenuePrompt, checkInOpen, dismissHomeReminder, dismissVenuePrompt } from '../../store/world';
 import { fmtTime } from '../../store/time';
 import { SosFab, openRide } from './common';
 import { BuddiesTab } from './BuddiesTab';
@@ -60,14 +60,14 @@ export function UserShell() {
 
       {c.venuePrompt && !checkInOpen(c) && (
         <Banner
-          title={`Looks like you've moved to ${c.venuePrompt}.`}
+          title={`Looks like you've arrived at ${c.venuePrompt}.`}
           body="Update your venue so Helen and your Night Buddies know where you are?"
           actions={
             <>
               <Button variant="secondary" onClick={() => dispatch(dismissVenuePrompt)}>
                 Not now
               </Button>
-              <Button variant="primary" onClick={() => ui_.set({ modal: 'edit', editPreset: { venue: c.venuePrompt! } })}>
+              <Button variant="primary" onClick={() => dispatch(acceptVenuePrompt)}>
                 Update
               </Button>
             </>

@@ -7,7 +7,7 @@ export const HOME: LatLng = [1.4295, 103.835];
 export const ZOUK: LatLng = [1.2906, 103.8462];
 export const CHUPITOS: LatLng = [1.2907, 103.8468];
 export const CLARKE_QUAY_MRT: LatLng = [1.2886, 103.8465];
-/** Where Sarah waits in the restroom queue at B5 (~40 m from Chupitos). */
+/** Where Sarah waits in the restroom queue at B6 (~40 m from Chupitos). */
 export const RESTROOM: LatLng = [1.29106, 103.84693];
 /** Sarah's home (Toa Payoh), where she starts at B1 before heading to Zouk. */
 export const SARAH_HOME: LatLng = [1.3343, 103.8563];

@@ -91,7 +91,7 @@ export function WatcherMap() {
       pos: sel.pos,
       z: 1000,
       // The map re-renders every 500 ms; during the ride a matching glide keeps the car smooth.
-      glideMs: sel.ride ? 500 : 700,
+      glideMs: sel.ride || w.locationTransition ? 500 : 700,
       label: `${sel.person.name}, ${sel.status}`,
       html: sel.ride && sel.ride.stage === 'trip'
         ? pinHtml({ initials: '', tone: 'safe', car: true, name: sel.person.short, chip: 'In ride' })

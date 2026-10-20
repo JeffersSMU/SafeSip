@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { BellRing, MapPinned, Play, RotateCcw, SkipForward, UserCog, Wifi, WifiOff } from 'lucide-react';
+import { BellRing, Play, RotateCcw, SkipForward, UserCog, Wifi, WifiOff } from 'lucide-react';
 import { Button, Modal, cx, ui } from '../../components/ui';
 import { supabaseConfigured, normaliseRoom } from '../../store/sync';
 import { dispatch, useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
-import { BEATS, fireCheckIn, goToBeat, moveWithoutEditing, nextBeat, nowMin } from '../../store/world';
+import { BEATS, fireCheckIn, goToBeat, nextBeat, nowMin } from '../../store/world';
 import s from './director.module.css';
 
 /**
@@ -25,7 +25,9 @@ export function Director() {
       ? 'Confirm “Yes, I’m home”'
       : c.ride && c.ride.stage !== 'arrived'
         ? `Skip ride stage (${c.ride.stage})`
-        : w.beat < 10
+        : w.locationTransition
+          ? 'Walking to Chupitos…'
+          : w.beat < 11
           ? `B${w.beat + 1}: ${BEATS[w.beat + 1].label}`
           : 'Scenario complete';
 
@@ -35,7 +37,7 @@ export function Director() {
         Now <strong>B{w.beat}</strong> · {fmtTime(nowMin(w))} · {BEATS[w.beat].label}
       </p>
 
-      <Button variant="primary" block style={{ marginTop: 12 }} onClick={() => dispatch(nextBeat)} disabled={w.beat >= 10 && !c.arrival && !c.summary}>
+      <Button variant="primary" block style={{ marginTop: 12 }} onClick={() => dispatch(nextBeat)} disabled={!!w.locationTransition || (w.beat >= 11 && !c.arrival && !c.summary)}>
         <SkipForward size={18} /> {nextLabel}
       </Button>
       <div className={s.row}>
@@ -46,10 +48,6 @@ export function Director() {
           <RotateCcw size={18} /> Reset scenario
         </Button>
       </div>
-      <Button block style={{ marginTop: 8 }} onClick={() => dispatch(moveWithoutEditing)} disabled={!c.session || !!c.ride}>
-        <MapPinned size={18} /> Walk to another venue without editing (venue prompt)
-      </Button>
-
       <h3 className={s.h}>Jump to beat</h3>
       <ol className={s.beats}>
         {BEATS.map((b) => (
@@ -124,7 +122,7 @@ export function Director() {
         </span>
       </label>
       <p className={cx(ui.muted, ui.small)} style={{ marginTop: 10 }}>
-        Shortcuts: D toggles this sheet · → next beat · R reset · deep link ?role=user|watcher&amp;beat=B6&amp;room=G3T3
+        Shortcuts: D toggles this sheet · → next beat · R reset · deep link ?role=user|watcher&amp;beat=B7&amp;room=G3T3
       </p>
     </Modal>
   );

@@ -36,16 +36,17 @@ The paper prototype used placeholder names (Cass Murphy, Alex Reed, Sam Torres);
 | B0 | 9:00 PM | — | Map, **Inactive** | Map, inactive: "Chloe isn't on a Night Out" |
 | B1 | 9:00 PM | Chloe taps *Start Session*: Zouk, return 2:00 AM, buddy Sarah | Map → **Active**; toast "Helen has been notified" | Silent update: "Chloe is heading to Zouk with Sarah · back ~2:00 AM"; map goes active |
 | B2 | 9:30 PM | Auto (director) | Toast "Arrived at Zouk · paired with Sarah"; Sarah's pin next to Chloe's | Venue: Zouk · Well-Being SAFE (with Night Buddy) |
-| B3 | 11:00 PM | Auto: location changes | Prompt "Looks like you've moved to **Chupitos**. Update your venue?" → Edit Session modal pre-filled → *Confirm Edits* | Silent update: "Venue changed to Chupitos"; trail extends |
-| B4 | 11:10 PM | Chloe logs drink via dual camera | Scan → "Martini · ≈2 standard drinks" → logged; pace LOW | (no change; drinks are shared with buddies, not Watcher — see A9) |
-| B5 | 12:00 AM | Auto: Sarah leaves (restroom queue) | Sarah's pin drifts away; Buddies tab "Apart · 40 m" | Still SAFE |
-| B6 | 12:30 AM | Auto: apart 30 min | **Vibration + Well-Being Check-in modal** → Chloe taps *I'm Okay* | Stays SAFE (a pending check-in is never shown to the Watcher) |
-| B7 | 12:35 AM | Auto: Sarah returns | Toast "Sarah is back with you" | SAFE |
-| B8 | 1:45 AM | Auto: 15 min before return time | Notification "Almost 2:00 AM — time to head home?" → *Book a ride* | — |
-| B9 | 1:55–2:30 AM | Ride flow (Grab-partnered) Chupitos → Yishun: booked 1:55, pickup 2:00, 30 min drive | Booking → matching → driver arriving → on trip, ETA 2:30 AM; toast "Session extended to 2:30 AM" | "Chloe is heading home · ETA 2:30 AM"; live car position |
-| B10 | 2:30 AM | Auto: arrived home | **"Have you arrived home?"** → *Yes, I'm home* → session summary → Map Inactive | "Chloe arrived home safely · 2:31 AM"; map inactive |
+| B3 | 11:00 PM | Chloe and Sarah spontaneously think about going to Chupitos | No venue edit or notification yet | Session still says Zouk; live location continues to be shared |
+| B4 | 11:00–11:10 PM | Director starts a compressed walk | Chloe and Sarah's live pins move together; trail grows; clock advances. No Chupitos destination marker or venue prompt during travel; session still shows Zouk | Live pin and trail update; reason says "In transit · live location updating"; no per-coordinate alert |
+| B5 | 11:13 PM | Auto: stable stop detected at Chupitos | Prompt "Looks like you've arrived at Chupitos. Update your venue?" → *Update* immediately changes the session venue and closes the prompt; *Not now* dismisses it | Live location remains visible; status reason says "Arrived at Chupitos · venue update pending" until Chloe confirms; then Helen gets the venue update |
+| B6 | 12:00 AM | Auto: Sarah leaves (restroom queue) | Sarah's pin drifts away; Buddies tab "Apart · 40 m" | Still SAFE |
+| B7 | 12:30 AM | Auto: apart 30 min | **Vibration + Well-Being Check-in modal** → Chloe taps *I'm Okay* | Stays SAFE (a pending check-in is never shown to the Watcher) |
+| B8 | 12:35 AM | Auto: Sarah returns | Toast "Sarah is back with you" | SAFE |
+| B9 | 1:45 AM | Auto: 15 min before return time | Notification "Almost 2:00 AM — time to head home?" → *Book a ride* | — |
+| B10 | 1:55–2:30 AM | Ride flow (partnered ride) Chupitos → Yishun: booked 1:55, pickup 2:00, 30 min drive | Booking → matching → driver arriving → on trip, ETA 2:30 AM; toast "Session extended to 2:30 AM" | "Chloe is heading home · ETA 2:30 AM"; live car position |
+| B11 | 2:30 AM | Auto: arrived home | **"Have you arrived home?"** → *Yes, I'm home* → session summary → Map Inactive | "Chloe arrived home safely · 2:31 AM"; map inactive |
 
-User-driven beats (B1, B3 confirm, B4, B6 answer, B9 booking, B10 confirm) are real taps. Time-driven beats are fired by the **Demo Director** (§7).
+User-driven steps (B1 session setup, B5 venue confirmation and drink scan, B7 check-in answer, B10 ride booking, B11 arrival confirmation) are real taps. Time-driven beats are fired by the **Demo Director** (§7).
 
 ---
 
@@ -154,7 +155,7 @@ This matches the navigation diagram in `docs\Iter1.4 Prototype.docx`, with these
 **Edit Session modal**
 - Same fields as Start (venue, return time, buddies), pre-filled. **Confirm Edits** primary; X to discard.
 - On confirm: toast "Session updated · Helen notified of venue change".
-- Entry points: *Edit Session* button, or the B3 venue-change prompt (heuristic B3: "Looks like you've moved to Chupitos. Update venue?" → *Update* opens Edit pre-filled with Chupitos / *Not now*).
+- Entry points: *Edit Session* button, or the B5 arrival prompt after Chloe has stopped at Chupitos (heuristic B3: "Looks like you've arrived at Chupitos. Update your venue?" → *Update* immediately confirms Chupitos / *Not now*).
 
 **End Session modal** (heuristic E4)
 - Title "End your Night Out?" · body "We'll let Helen know. Need a safe ride home?"
@@ -177,11 +178,11 @@ When inactive, Section 1 is replaced by an empty state "Start a Night Out to sha
 ### 5.4 Drinks tab
 Header "Drinks", subtitle "Log what you're drinking. Shared with your Night Buddies."
 
-- **Your totals** card: drinks count · standard drinks · **Pace** (LOW / MED / HIGH) with an ⓘ that explains: "Standard drinks per hour this session. LOW < 1, MED 1–2, HIGH > 2. At HIGH, consider water and slowing down." (heuristic B4).
+- **Your totals** card: drinks count · standard drinks · **Pace** (LOW / MED / HIGH) with an ⓘ that explains: "Standard drinks per hour this session. LOW < 1, MED 1–2, HIGH > 2. At HIGH, consider water and slowing down." (heuristic B5).
 - **Scan a drink** — large primary card with a camera icon ("Snap your drink, we'll log it").
 - **Add manually** — grid of buttons with a "+" and icon (heuristic E1): Beer, Wine, Shot, Cocktail, Cider, Water, **Other** (heuristic C3: name + size + strength sheet). Each preset has a hardcoded standard-drink value (Beer 330 ml ≈1.3, Wine 150 ml ≈1.5, Shot ≈1, Cocktail ≈1.5, Cider ≈1.3, Water 0).
 - **Your log**: time-stamped entries, newest first, swipe/long-press → Undo.
-- **Buddy drinks**: Sarah Loh · 2 drinks · LOW (hardcoded, updates at B5 to 3).
+- **Buddy drinks**: Sarah Loh · 2 drinks · LOW (hardcoded; scenario's Martini is logged at B5).
 - When no session is active, logging still works but nothing is shared (note under the header).
 
 **Dual-camera capture (BeReal-style) — real photos from both cameras**
@@ -189,12 +190,12 @@ Header "Drinks", subtitle "Log what you're drinking. Shared with your Night Budd
 Platform constraint: Safari on iOS allows only one active camera at a time, and most Android phones can't open front and back together either. Only a few Android devices allow two concurrent `getUserMedia` streams. So the capture uses two modes, picked at runtime:
 
 - **Mode A: Quick-flip (default; every iPhone and most Android phones).**
-  1. Full-screen rear preview (`facingMode: { ideal: 'environment' }`, `playsinline`, muted), shutter button, hint "Point at your drink". While it's open, the front-camera `deviceId` is resolved from `enumerateDevices()` so the flip needs no lookup.
-  2. Shutter → grab the rear frame to a canvas (`ImageCapture.takePhoto()` where supported, else `drawImage` from the video) → **stop the rear track** → immediately `getUserMedia` the front camera.
-  3. The frozen drink photo fills the screen while the front preview appears live as the rounded inset (top-left). A 3-2-1 "Now you!" countdown runs, then the front frame is captured (mirrored for display, as BeReal does).
-  4. The flip typically takes 0.3–1 s. A flash/flip transition covers the gap, so it feels like one action.
-- **Mode B: Simultaneous (progressive enhancement, Android only where the device allows it).**
-  - On opening the camera, try to open the front stream while the rear stream is still live. If both tracks stay `readyState === 'live'` and both videos produce frames within 1 s, show **both live previews at once** (rear full-screen, front inset) and capture both from one shutter press.
+  1. Start with the full-screen rear preview and a **Flip camera** control. The selected camera takes the first shot; rear is selected by default. Resolve the front-camera `deviceId` from `enumerateDevices()` so a flip does not require another device lookup.
+  2. Freeze the first photo, dim it, and show a spinner with a message for the next shot. After about 2.2 s, open the opposite camera and capture automatically. Rear-first displays "Smile now, uh I mean now" before the front selfie; front-first displays "Nice, now your drink" before the rear drink photo.
+  3. Mirror the front-camera image for display. The result shows the drink photo full-screen and the selfie as a rounded inset.
+  4. **Retake photos** restarts the pair in the same order. The result card keeps **Log it** and *Not right? Pick manually*.
+- **Mode B: Dual preview (progressive enhancement, only where the device allows it).**
+  - On opening the camera, try to open both streams. If both tracks stay `readyState === 'live'` and both videos produce frames within 1 s, allow the Flip camera control to swap which preview is full-screen. The first shot is still captured alone; the opposite camera follows after the dimmed loading handoff.
   - If the second stream fails, or ends the first track, drop silently to Mode A. The result is cached in `localStorage` so the probe runs once per device.
 - Both modes end in the same photo pair (drink + selfie). The stock-photo fallback is used **only** when permission is denied or no camera exists, e.g. on desktop.
 - Requires HTTPS and a user gesture to start (the "Scan a drink" tap provides both). iOS needs `playsinline` or it opens the system fullscreen player.
@@ -233,7 +234,7 @@ Platform constraint: Safari on iOS allows only one active camera at a time, and 
 - Watcher's Well-Being becomes **SOS** → emergency buttons appear (§6.2).
 
 ### 5.7 Well-being check-in
-**Trigger:** session active AND Chloe has been apart from every Night Buddy (or alone) for 30 continuous minutes; repeats every 30 min while still apart. Never fires while paired. In the prototype the Director fires it at B6.
+**Trigger:** session active AND Chloe has been apart from every Night Buddy (or alone) for 30 continuous minutes; repeats every 30 min while still apart. Never fires while paired. In the prototype the Director fires it at B7.
 
 **Modal** (paper: "Automated Well-Being Check-in"; heuristic C1, D2, E3, F2)
 - Vibrate (`[400,200,400]`) + shake on open.
@@ -245,7 +246,7 @@ Platform constraint: Safari on iOS allows only one active camera at a time, and 
 - Escalation if ignored (off the critical path, but implemented): at 30 s a second vibration + warning "Sarah and Helen will be notified in 30 s"; at 60 s Night Buddies are alerted (Sarah sees Chloe as MISSING; Helen still sees SAFE) and a new 60 s timer starts; at 120 s Helen gets a non-silent alert and the Watcher shows MISSING. Answering *I'm Okay* at any point sends a "Chloe is safe" follow-up.
 
 ### 5.8 Ride hailing (Grab-partnered)
-Entry: B8 reminder notification, End Session → *Book a SafeSip ride*, or a "Get home" shortcut on the map session card. Full-screen stack with ← Back. Follows Grab's layout conventions (heuristic E2) without using Grab's logo. Chloe rides **alone** (single drop-off). Sarah gets her own reminder and makes her own arrangements.
+Entry: B9 reminder notification, End Session → *Book a SafeSip ride*, or a "Get home" shortcut on the map session card. Full-screen stack with ← Back. Follows common ride-hailing conventions (heuristic E2). Chloe rides **alone** (single drop-off). Sarah gets her own reminder and makes her own arrangements.
 
 Amenities act as **both a driver filter and priced add-ons**: ticked items limit matching to drivers who carry them and add their price to the fare.
 
@@ -277,7 +278,7 @@ Ride progress is time-compressed (whole ride ≈ 60–90 s on screen) and can be
 
 ### 5.9 In-app notifications and toasts
 - Toasts (top, 3 s, `role="status"`) for passive confirmations.
-- Banners styled like iOS notifications for "system" events (B8 reminder, venue prompt) so the recording reads as push notifications.
+- Banners styled like iOS notifications for "system" events (B9 reminder, B5 venue prompt) so the recording reads as push notifications.
 
 ---
 
@@ -334,9 +335,9 @@ Same layout, components and order as the User's Me tab (§5.5), with User-only p
 Needed because the scenario spans 5½ hours and depends on events no prototype can sense (arrival, separation, home).
 
 - **Simulated clock** in app state, starting 9:00 PM Wed. Shown in the desktop frame status bar and in-app chips.
-- **Hidden trigger:** triple-tap the header status pill (or press `D` on desktop) opens a small sheet: current beat, **Next beat ▶**, beat list to jump to (B0–B10), *Fire check-in now*, *Reset scenario*, role switch.
+- **Hidden trigger:** triple-tap the header status pill (or press `D` on desktop) opens a small sheet: current beat, **Next beat ▶**, beat list to jump to (B0–B11), *Fire check-in now*, *Reset scenario*, role switch. B4 animates the shared walk for six real seconds while the scenario clock advances from 11:00 to 11:10 PM; B5 settles at 11:13 PM and prompts Chloe to confirm the detected venue.
 - **Keyboard shortcuts** for desktop recording: `→` next beat, `R` reset.
-- **Deep links** for testing: `?role=user|watcher&beat=B6`.
+- **Deep links** for testing: `?role=user|watcher&beat=B7`.
 - Advancing a beat applies its scripted state (time, positions, notifications) but never performs the user's own taps; if a user-driven step was skipped, the Director auto-applies its default (e.g. starts the session with Zouk/Sarah/2:00 AM) so any beat can be reached directly.
 - The trigger is invisible in recordings.
 
@@ -357,7 +358,7 @@ Needed because the scenario spans 5½ hours and depends on events no prototype c
 | Chupitos (Clarke Quay) | ~1.2907, 103.8468 |
 | Route Chupitos → Yishun | pre-computed polyline (one-off OSRM export, stored as JSON) |
 | Chloe 60-min trail | generated points along the walk Zouk → Chupitos + jitter inside the venue |
-| Sarah at B5 | moves ~40 m to a restroom point, back at B7 |
+| Sarah at B6 | moves ~40 m to a restroom point, back at B8 |
 | Battery | Chloe 82 % → 61 % by 2:30 AM; Sarah 74 % |
 | Ride | driver Ahmad R., Toyota Prius SMB1234X; 22.4 km; fare computed (§5.8), $31.95 in the scenario; pickup 2:00, ETA 2:30 AM |
 | Martini | 90 ml, ~30 % ABV, ≈2 standard drinks |

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { connectSync, dispatch, startParams, useUi, useWorld } from '../store';
-import { escalateCheckIn, goToBeat, nextBeat, tickApart, tickRide } from '../store/world';
+import { escalateCheckIn, goToBeat, nextBeat, tickApart, tickLocationTransition, tickRide } from '../store/world';
 import { playAlarm, playChime, unlockAudio, vibrate } from './sound';
 
 /** Show toasts for new scenario events addressed to this device's role. */
@@ -50,6 +50,7 @@ export function useAutoWriter() {
       const userPeerAlive = Date.now() - lastUserPeerMs < 10000;
       if (!role || (role === 'watcher' && userPeerAlive)) return;
       const interval = useUi.getState().checkInInterval;
+      dispatch(tickLocationTransition);
       dispatch(tickRide);
       dispatch(escalateCheckIn);
       dispatch((w, n) => tickApart(w, n, interval));
@@ -82,12 +83,12 @@ export function useShortcuts() {
   }, []);
 }
 
-/** `?beat=B6` deep link, applied once on load. */
+/** `?beat=B7` deep link, applied once on load. */
 export function useDeepLinkBeat() {
   useEffect(() => {
     const m = /^B?(\d{1,2})$/i.exec(startParams.beat ?? '');
     if (m) {
-      const n = Math.min(10, Number(m[1]));
+      const n = Math.min(11, Number(m[1]));
       dispatch((w, now) => goToBeat(w, n, now));
     }
   }, []);

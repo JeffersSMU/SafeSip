@@ -10,7 +10,7 @@ export function UserPill() {
   return <SessionPill active={active} label={active ? 'Active: Night Out session, location shared' : 'Inactive: no Night Out session'} />;
 }
 
-/** Open the ride booking flow (from the B8 reminder, End Session, or the map card). */
+/** Open the ride booking flow (from the B9 reminder, End Session, or the map card). */
 export function openRide() {
   dispatch(enterRideQuote);
   useUi.getState().set({ fullscreen: 'rideQuote', modal: null, sheet: null });

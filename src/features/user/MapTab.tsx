@@ -5,7 +5,7 @@ import { CHLOE, personById } from '../../data/cast';
 import { HOME, distanceM } from '../../data/places';
 import { useNow, useUi, useWorld } from '../../store';
 import { fmtTime } from '../../store/time';
-import { buddyBattery, buddyView, chloeBattery, chloePos, nowMin, trail60, userWellbeing, type Wellbeing } from '../../store/world';
+import { buddyBattery, buddyPos, buddyView, chloeBattery, chloePos, nowMin, trail60, userWellbeing, type Wellbeing } from '../../store/world';
 import { UserPill } from './common';
 import s from './user.module.css';
 
@@ -17,7 +17,7 @@ const INSETS_ACTIVE = { top: 48, bottom: 170 };
 const INSETS_IDLE = { top: 48, bottom: 80 };
 
 export function MapTab() {
-  const now = useNow(1000);
+  const now = useNow(500);
   const w = useWorld((x) => x.world);
   const set = useUi((u) => u.set);
   const c = w.chloe;
@@ -29,11 +29,13 @@ export function MapTab() {
   const people: Wellbeing[] = [];
   const markers: MapMarker[] = [];
   if (session) {
-    // Target / meet-up point (B1) and the new destination after an edit (B3). Hidden once she's there.
-    const atTarget = distanceM(me, session.venuePos) < 40;
+    // Only show the confirmed session venue. The Director's B4 walk must not reveal its destination.
+    const targetPos = session.venuePos;
+    const targetName = session.venue;
+    const atTarget = distanceM(me, targetPos) < 40;
     const caption = session.venues.length > 1 ? '· new destination' : '· meet-up point';
     if (!atTarget)
-      markers.push({ id: `dest-${session.venue}`, pos: session.venuePos, html: destHtml(session.venue, caption), size: DEST_SIZE, anchor: DEST_ANCHOR, label: `${session.venue} ${caption.replace('· ', '')}`, z: -200 });
+      markers.push({ id: `dest-${targetName}`, pos: targetPos, html: destHtml(targetName, caption), size: DEST_SIZE, anchor: DEST_ANCHOR, label: `${targetName} ${caption.replace('· ', '')}`, z: -200 });
     for (const id of session.buddies) {
       const b = w.buddies[id];
       if (!b) continue;
@@ -46,7 +48,7 @@ export function MapTab() {
       const chip = b.withChloe ? `${WORD[v.status]} · with you` : b.enRoute ? 'On the way' : WORD[v.status];
       markers.push({
         id,
-        pos: b.pos,
+        pos: buddyPos(w, id, now),
         anchor: close ? PIN_ANCHOR_TOP : undefined,
         label: `${p.name}, ${v.label}, battery ${buddyBattery(w, now)}%`,
         html: pinHtml({ initials: p.initials, tone: TONE[v.status], name: `${p.short} · ${buddyBattery(w, now)}%`, chip, labelTop: close }),
@@ -76,7 +78,8 @@ export function MapTab() {
 
   const trail = session ? trail60(w, now) : [];
   const fit = session ? markers.filter((m) => m.id !== 'home').map((m) => m.pos) : [me];
-  const viewKey = `${!!session}-${me[0].toFixed(4)}-${w.beat}-${session?.venue}-${session?.buddies.map((b) => `${w.buddies[b]?.pos[0].toFixed(4)}`).join()}`;
+  const mapPositionKey = w.locationTransition ? 'walking' : me[0].toFixed(4);
+  const viewKey = `${!!session}-${mapPositionKey}-${w.beat}-${session?.venue}-${w.locationTransition?.targetVenue ?? ''}-${session?.buddies.map((b) => `${w.buddies[b]?.pos[0].toFixed(4)}`).join()}`;
   const count = (st: Wellbeing[]) => people.filter((p) => st.includes(p)).length;
   const rows = [
     { key: 'safe', label: 'Safe', n: count(['SAFE']), icon: <CheckCircle2 size={16} aria-hidden />, color: 'var(--safe)', always: true },

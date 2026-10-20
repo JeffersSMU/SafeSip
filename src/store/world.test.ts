@@ -12,12 +12,14 @@ import {
   escalateCheckIn,
   goToBeat,
   initialWorld,
+  logDrink,
   moveWithoutEditing,
   nextBeat,
   nowMin,
   startSos,
   userWellbeing,
   watcherWellbeing,
+  tickLocationTransition,
   ALL_AMENITIES,
   type World,
 } from './world';
@@ -25,11 +27,22 @@ import {
 const t0 = 1_800_000_000_000;
 
 describe('Scenario 1 beats (DESIGN §1.2)', () => {
-  it('walks B0 → B10 with Next beat and ends inactive', () => {
+  it('walks B0 → B11 with Next beat and ends inactive', () => {
     let w: World = initialWorld(t0);
     let guard = 0;
-    while (!w.chloe.arrival && guard++ < 20) w = nextBeat(w, t0);
-    expect(w.beat).toBe(10);
+    while (!w.chloe.arrival && guard++ < 30) {
+      if (w.locationTransition) {
+        w = tickLocationTransition(w, w.locationTransition.startedMs + w.locationTransition.durationMs)!;
+        continue;
+      }
+      if (w.chloe.venuePrompt && w.chloe.session) {
+        const session = w.chloe.session;
+        w = editSession(w, { venue: 'Chupitos', returnMin: session.returnMin, buddies: session.buddies }, t0);
+        w = logDrink(w, { id: 'martini-test', name: 'Martini', detail: '90 ml', std: 2, emoji: '🍸', scanned: true }, t0);
+      }
+      w = nextBeat(w, t0);
+    }
+    expect(w.beat).toBe(11);
     expect(fmtTime(nowMin(w, t0))).toBe('2:30 AM');
     expect(w.chloe.session?.venues).toEqual(['Zouk', 'Chupitos']);
     expect(w.chloe.session?.returnMin).toBe(T(2, 30, true));
@@ -41,8 +54,10 @@ describe('Scenario 1 beats (DESIGN §1.2)', () => {
   });
 
   it('freezes the clock at each beat time, so both phones always agree', () => {
-    const w = goToBeat(initialWorld(t0), 4, t0);
-    expect(fmtTime(nowMin(w, t0))).toBe('11:10 PM');
+    let w = goToBeat(initialWorld(t0), 4, t0);
+    expect(fmtTime(nowMin(w, t0))).toBe('11:00 PM');
+    w = tickLocationTransition(w, t0 + 6_000)!;
+    expect(fmtTime(nowMin(w, t0 + 6_000))).toBe('11:10 PM');
     expect(fmtTime(nowMin(w, t0 + 10 * 60_000))).toBe('11:10 PM');
   });
 
@@ -75,16 +90,16 @@ describe('Scenario 1 beats (DESIGN §1.2)', () => {
     expect(w.chloe.venuePrompt).toBe('Headquarters by The Council');
   });
 
-  it("B6: I'm Okay marks Chloe and Sarah SAFE while still apart", () => {
-    let w = goToBeat(initialWorld(t0), 6, t0);
+  it("B7: I'm Okay marks Chloe and Sarah SAFE while still apart", () => {
+    let w = goToBeat(initialWorld(t0), 7, t0);
     expect(userWellbeing(w, t0)).toBe('APART');
     w = answerCheckInOk(w, t0 + 5_000);
     expect(userWellbeing(w, t0 + 6_000)).toBe('SAFE');
     expect(buddyView(w, 'sarah', t0 + 6_000).status).toBe('SAFE');
   });
 
-  it('shares only the pace (LOW after one Martini by 11:10 PM)', () => {
-    expect(chloePace(goToBeat(initialWorld(t0), 4, t0), t0)).toBe('LOW');
+  it('shares only the pace (LOW after the B5 Martini)', () => {
+    expect(chloePace(goToBeat(initialWorld(t0), 6, t0), t0)).toBe('LOW');
   });
 
   it('prices a changed drop-off from its own distance', () => {
@@ -94,7 +109,7 @@ describe('Scenario 1 beats (DESIGN §1.2)', () => {
 });
 
 describe('Watcher only sees SAFE / MISSING / SOS (decision 2)', () => {
-  const at6 = () => goToBeat(initialWorld(t0), 6, t0);
+  const at6 = () => goToBeat(initialWorld(t0), 7, t0);
 
   it('stays SAFE while the check-in is pending and after buddy escalation', () => {
     const w = at6();
