@@ -16,6 +16,7 @@ import { RideFlow } from './RideFlow';
 import { EndSessionModal, SessionModal } from './SessionModals';
 import { ArrivalModal, SummaryModal } from './Arrival';
 import { SosFlow, SosSheet } from './Sos';
+import { OnboardingTour } from '../onboarding/OnboardingTour';
 import s from './user.module.css';
 
 const NAV: NavItem<UserTab>[] = [
@@ -104,6 +105,7 @@ export function UserShell() {
       )}
       {ui_.modal === 'sos' && !c.sos && <SosSheet />}
       {sosVisible && <SosFlow />}
+      <OnboardingTour role="user" suspended={!!c.sos || !!c.arrival || !!c.summary || checkInOpen(c)} />
     </div>
   );
 }

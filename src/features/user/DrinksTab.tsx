@@ -118,7 +118,7 @@ export function DrinksTab() {
           )}
         </section>
 
-        <button type="button" className={s.scanCard} onClick={() => set({ fullscreen: 'camera' })}>
+        <button type="button" className={s.scanCard} data-onboarding="user-drinks" onClick={() => set({ fullscreen: 'camera' })}>
           <span className={s.scanIcon}>
             <Camera size={30} aria-hidden />
           </span>

@@ -6,6 +6,7 @@ import { playAlarm, vibrate } from '../../app/sound';
 import { childView, linkedIds } from './children';
 import { WatcherMap } from './WatcherMap';
 import { WatcherMe } from './WatcherMe';
+import { OnboardingTour } from '../onboarding/OnboardingTour';
 import s from './watcher.module.css';
 
 const NAV: NavItem<WatcherTab>[] = [
@@ -27,6 +28,7 @@ function EmergencyTakeover() {
       played.current = v.emergency;
       playAlarm();
       vibrate([600, 200, 600, 200, 600]);
+      if (useUi.getState().onboarding?.role === 'watcher') useUi.getState().finishOnboarding();
     }
   }, [v?.emergency]);
 
@@ -85,12 +87,14 @@ function NoticeBanner() {
 export function WatcherShell() {
   const tab = useUi((u) => u.watcherTab);
   const set = useUi((u) => u.set);
+  const notice = useUi((u) => u.notice);
   return (
     <div className={s.shell}>
       <main key={tab} className={s.content}>{tab === 'map' ? <WatcherMap /> : <WatcherMe />}</main>
       <BottomNav items={NAV} value={tab} onChange={(k) => set({ watcherTab: k })} />
       <NoticeBanner />
       <EmergencyTakeover />
+      <OnboardingTour role="watcher" suspended={!!notice} />
     </div>
   );
 }

@@ -242,7 +242,7 @@ function WatcherSignup({ onDone }: { onDone: () => void }) {
 }
 
 function Signup() {
-  const { set, login } = useUi.getState();
+  const { set, completeSignup } = useUi.getState();
   const [tab, setTab] = useState<'user' | 'watcher'>('user');
   return (
     <div className={s.page}>
@@ -269,7 +269,7 @@ function Signup() {
             : `You watch over someone and get alerts if they need help or go missing.`}
         </p>
       </div>
-      {tab === 'user' ? <UserSignup onDone={() => login('user')} /> : <WatcherSignup onDone={() => login('watcher')} />}
+      {tab === 'user' ? <UserSignup onDone={() => completeSignup('user')} /> : <WatcherSignup onDone={() => completeSignup('watcher')} />}
     </div>
   );
 }

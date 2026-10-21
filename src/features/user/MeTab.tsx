@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bike, ChevronRight, Footprints, Home, LogOut, MapPin, Music, Phone, Plus, ShieldCheck, Timer, Toilet, Utensils, Wine } from 'lucide-react';
+import { Bike, BookOpen, ChevronRight, Footprints, Home, LogOut, MapPin, Music, Phone, Plus, ShieldCheck, Timer, Toilet, Utensils, Wine } from 'lucide-react';
 import { Avatar, Button, Header, LinkButton, Modal, cx, ui } from '../../components/ui';
 import { MotionSetting } from '../../components/MotionSetting';
 import { CHLOE, HELEN, NEXT_OF_KIN, personById } from '../../data/cast';
@@ -86,7 +86,7 @@ function IntervalSheet({ onClose }: { onClose: () => void }) {
 export function MeTab() {
   const status = useWorld((w) => w.world.chloe.status);
   const session = useWorld((w) => !!w.world.chloe.session);
-  const { checkInInterval, logout } = useUi();
+  const { checkInInterval, logout, startOnboarding } = useUi();
   const [sheet, setSheet] = useState<'nok' | 'interval' | null>(null);
   return (
     <>
@@ -110,7 +110,7 @@ export function MeTab() {
         </section>
 
         <h2 className={s.sectionTitle}>Quick status</h2>
-        <div className={s.chips} role="group" aria-label="Quick status, shown to your Night Buddies">
+        <div className={s.chips} role="group" aria-label="Quick status, shown to your Night Buddies" data-onboarding="user-me">
           {QUICK.map((q) => (
             <button
               key={q.label}
@@ -158,6 +158,11 @@ export function MeTab() {
               Enabled
             </span>
           </div>
+          <button type="button" className={s.setRow} onClick={startOnboarding}>
+            <BookOpen size={20} aria-hidden />
+            <span className={s.setLabel}>Replay onboarding</span>
+            <ChevronRight size={18} aria-hidden />
+          </button>
           <MotionSetting />
         </div>
 

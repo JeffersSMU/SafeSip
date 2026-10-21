@@ -139,7 +139,7 @@ export function WatcherMap() {
         </div>
       )}
 
-      <div className={s.map}>
+      <div className={s.map} data-onboarding="watcher-map">
         <MapView
           target={active && fit.length ? { fit, maxZoom: 17 } : { center: SG_CENTER, zoom: 11 }}
           viewKey={viewKey}
@@ -210,7 +210,7 @@ export function WatcherMap() {
           </section>
         )}
 
-        <section className={ui.card} aria-label="Updates">
+        <section className={ui.card} aria-label="Updates" data-onboarding="watcher-updates">
           <h2 className={s.cardTitle}>Updates</h2>
           {views.length > 1 && (
             <div className={s.filter}>

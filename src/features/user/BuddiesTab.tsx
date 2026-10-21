@@ -24,7 +24,7 @@ export function BuddiesTab() {
       <div className={s.scroll}>
         {session ? (
           <>
-            <h2 className={s.sectionTitle}>In your session</h2>
+            <h2 className={s.sectionTitle} data-onboarding="user-buddies">In your session</h2>
             <div className={s.strip} aria-label="Session summary">
               <StatusPill status="SAFE" label={`${safe} Safe`} />
               <StatusPill status="APART" label={`${rows.length - safe} Apart`} />
@@ -59,7 +59,7 @@ export function BuddiesTab() {
             })}
           </>
         ) : (
-          <div className={cx(ui.card, s.empty)}>
+          <div className={cx(ui.card, s.empty)} data-onboarding="user-buddies">
             <Navigation size={32} aria-hidden />
             <p>Start a Night Out to share live location with your Night Buddies.</p>
             <Button variant="primary" onClick={() => set({ userTab: 'map', modal: 'start' })}>

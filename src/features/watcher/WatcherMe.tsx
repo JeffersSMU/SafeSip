@@ -1,4 +1,4 @@
-import { BellRing, ChevronRight, LogOut, Moon, Plus, Users } from 'lucide-react';
+import { BellRing, BookOpen, ChevronRight, LogOut, Moon, Plus, Users } from 'lucide-react';
 import { Avatar, Button, Header, SessionPill, StatusPill, cx, ui } from '../../components/ui';
 import { MotionSetting } from '../../components/MotionSetting';
 import { HELEN } from '../../data/cast';
@@ -11,7 +11,7 @@ import s from './watcher.module.css';
 export function WatcherMe() {
   const now = useNow(2000);
   const w = useWorld((x) => x.world);
-  const { extraChild, quietUpdates, set, logout, toast } = useUi();
+  const { extraChild, quietUpdates, set, logout, toast, startOnboarding } = useUi();
   const views = linkedIds(extraChild).map((id) => childView(id, w, now));
   const anyActive = views.some((v) => v.session);
 
@@ -29,7 +29,7 @@ export function WatcherMe() {
         </section>
 
         <h2 className={userCss.sectionTitle}>Looking after</h2>
-        <div className={cx(ui.card, userCss.settings)}>
+        <div className={cx(ui.card, userCss.settings)} data-onboarding="watcher-me">
           {views.map((v) => (
             <button
               key={v.person.id}
@@ -89,6 +89,11 @@ export function WatcherMe() {
             <span className={userCss.setLabel}>Linked Users</span>
             <span className={userCss.setValue}>{views.length}</span>
           </div>
+          <button type="button" className={userCss.setRow} onClick={startOnboarding}>
+            <BookOpen size={20} aria-hidden />
+            <span className={userCss.setLabel}>Replay onboarding</span>
+            <ChevronRight size={18} aria-hidden />
+          </button>
           <MotionSetting />
         </div>
 

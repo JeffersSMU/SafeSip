@@ -92,7 +92,7 @@ export function MapTab({ editOnly = false }: { editOnly?: boolean }) {
     <>
       <Header title="Map" pill={<UserPill />} />
       <div className={s.mapWrap}>
-        <div className={s.mapFill}>
+        <div className={s.mapFill} data-onboarding={session ? 'user-map' : undefined}>
           <MapView
             target={session ? { fit, maxZoom: 18 } : { center: me, zoom: 15 }}
             viewKey={viewKey}
@@ -136,7 +136,7 @@ export function MapTab({ editOnly = false }: { editOnly?: boolean }) {
               </div>
             </>
           ) : (
-            <Button variant="primary" block onClick={() => set({ modal: 'start' })}>
+            <Button variant="primary" block data-onboarding="user-map" onClick={() => set({ modal: 'start' })}>
               Start Night Out
             </Button>
           )}

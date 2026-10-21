@@ -45,7 +45,7 @@ export function PhoneFrame({ children, showRecordingHelp = true }: { children: R
     <div className={s.desktop}>
       <div className={s.wrap}>
         <div className={s.frame}>
-          <div className={s.screen}>
+          <div className={s.screen} data-phone-screen>
             <StatusBar />
             <div className={s.app}>{children}</div>
           </div>

@@ -28,6 +28,11 @@ export interface PhotoPair {
   selfieRecap?: string;
 }
 
+interface OnboardingSeen {
+  version: 1;
+  roles: Record<Role, boolean>;
+}
+
 const AB_TEST_MODE = location.pathname.startsWith('/a-b-testing');
 const WORLD_KEY = AB_TEST_MODE ? 'safesip.ab-testing.world.v1' : 'safesip.world.v2';
 const UI_KEY = AB_TEST_MODE ? 'safesip.ab-testing.ui.v1' : 'safesip.ui.v1';
@@ -101,6 +106,7 @@ interface UiPersisted {
   extraChild: boolean;
   checkInInterval: number;
   quietUpdates: boolean;
+  onboardingSeen: OnboardingSeen;
   /** Reduce motion: true/false once the person picks one; null follows the device setting. */
   reduceMotion: boolean | null;
 }
@@ -124,13 +130,45 @@ interface UiStore extends UiPersisted {
   /** Watcher's non-silent notification banner. */
   notice: { id: string; title: string; body: string } | null;
   photos: Record<string, PhotoPair>;  set: (p: Partial<UiStore>) => void;
+  onboarding: { role: Role; step: number } | null;
   toast: (text: string, tone?: Toast['tone']) => void;
   login: (role: Role) => void;
+  completeSignup: (role: Role) => void;
+  startOnboarding: () => void;
+  setOnboardingStep: (index: number) => void;
+  finishOnboarding: () => void;
   logout: () => void;
 }
 
-const UI_DEFAULTS: UiPersisted = { role: null, room: '', extraChild: false, checkInInterval: 30, quietUpdates: true, reduceMotion: null };
-const persisted: UiPersisted = { ...UI_DEFAULTS, ...load<Partial<UiPersisted>>(UI_KEY, {}) };
+const UI_DEFAULTS: UiPersisted = {
+  role: null,
+  room: '',
+  extraChild: false,
+  checkInInterval: 30,
+  quietUpdates: true,
+  onboardingSeen: { version: 1, roles: { user: false, watcher: false } },
+  reduceMotion: null,
+};
+const loadedUi = load<Partial<UiPersisted> | null>(UI_KEY, {});
+const savedUi = loadedUi && typeof loadedUi === 'object' && !Array.isArray(loadedUi) ? loadedUi : {};
+const savedOnboardingSeen =
+  savedUi.onboardingSeen && typeof savedUi.onboardingSeen === 'object' && savedUi.onboardingSeen.version === 1
+    ? savedUi.onboardingSeen
+    : undefined;
+const savedOnboardingRoles = (savedOnboardingSeen?.roles && typeof savedOnboardingSeen.roles === 'object'
+  ? savedOnboardingSeen.roles
+  : {}) as Partial<Record<Role, boolean>>;
+const persisted: UiPersisted = {
+  ...UI_DEFAULTS,
+  ...savedUi,
+  onboardingSeen: {
+    version: 1,
+    roles: {
+      user: typeof savedOnboardingRoles.user === 'boolean' ? savedOnboardingRoles.user : false,
+      watcher: typeof savedOnboardingRoles.watcher === 'boolean' ? savedOnboardingRoles.watcher : false,
+    },
+  },
+};
 
 const motionQuery = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
@@ -168,14 +206,52 @@ export const useUi = create<UiStore>((set, get) => ({
   sosHiddenId: null,
   notice: null,
   photos: load(PHOTOS_KEY, {}),
+  onboarding: null,
   set: (p) => set(p),
   toast: (text, tone = 'info') => {
     const id = Math.random().toString(36).slice(2);
     set({ toasts: [...get().toasts.slice(-2), { id, text, tone }] });
     window.setTimeout(() => set({ toasts: get().toasts.filter((t) => t.id !== id) }), 3200);
   },
-  login: (role) => set({ role, userTab: 'map', watcherTab: 'map', modal: null, fullscreen: null, sheet: null }),
-  logout: () => set({ role: null, authScreen: 'login', modal: null, fullscreen: null, sheet: null }),
+  login: (role) => set({ role, onboarding: null, userTab: 'map', watcherTab: 'map', modal: null, fullscreen: null, sheet: null }),
+  completeSignup: (role) =>
+    set((state) => ({
+      role,
+      userTab: 'map',
+      watcherTab: 'map',
+      modal: null,
+      fullscreen: null,
+      sheet: null,
+      onboarding: state.onboardingSeen.roles[role] ? null : { role, step: 0 },
+    })),
+  startOnboarding: () => {
+    const role = get().role;
+    if (!role) return;
+    set({
+      onboarding: { role, step: 0 },
+      userTab: 'map',
+      watcherTab: 'map',
+      modal: null,
+      fullscreen: null,
+      sheet: null,
+    });
+  },
+  setOnboardingStep: (index) => {
+    const current = get().onboarding;
+    if (current) set({ onboarding: { ...current, step: Math.max(0, index) } });
+  },
+  finishOnboarding: () => {
+    const current = get().onboarding;
+    if (!current) return;
+    set((state) => ({
+      onboarding: null,
+      onboardingSeen: {
+        version: 1,
+        roles: { ...state.onboardingSeen.roles, [current.role]: true },
+      },
+    }));
+  },
+  logout: () => set({ role: null, onboarding: null, authScreen: 'login', modal: null, fullscreen: null, sheet: null }),
 }));
 
 useUi.subscribe((s) => {
@@ -185,6 +261,7 @@ useUi.subscribe((s) => {
     extraChild: s.extraChild,
     checkInInterval: s.checkInInterval,
     quietUpdates: s.quietUpdates,
+    onboardingSeen: s.onboardingSeen,
     reduceMotion: s.reduceMotion,
   };
   localStorage.setItem(UI_KEY, JSON.stringify(p));
