@@ -46,7 +46,7 @@ export function ABTestingApp() {
             </div>
             <h1 id="result-title">{success ? 'Well Done!' : 'Not Quite Right...'}</h1>
             <p>{success ? 'Perfect! You may now mark the task as completed.' : 'The modified session details do not match the task completely. Check the changed location and return time stated in the task, and try again.'}</p>
-            {success && <button type="button" className={ab.backButton} onClick={returnToTask}>Back to SafeSip</button>}
+            {!success && <button type="button" className={ab.backButton} onClick={returnToTask}>Back to SafeSip</button>}
           </section>
         </main>
       </PhoneFrame>
