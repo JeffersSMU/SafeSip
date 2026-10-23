@@ -216,7 +216,7 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
         </div>)}
 
         <Button variant="primary" block disabled={!valid} onClick={submit}>
-          {mode === 'start' ? "Let's Go!" : 'Confirm Edits'}
+          {mode === 'start' ? "Let's Go!" : 'Confirm'}
         </Button>
       </div>
     </Modal>
