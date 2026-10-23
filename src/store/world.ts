@@ -734,7 +734,7 @@ export function escalateCheckIn(w0: World, nowMs = Date.now()): World | null {
   const w = clone(w0);
   for (const k of missing) {
     if (k === 'warn')
-      addEvent(w, { id: `${c.id}-warn`, to: ['user'], text: 'Sarah and Helen will be notified in 30 s', tone: 'warn', vibrate: true }, nowMs);
+      addEvent(w, { id: `${c.id}-warn`, to: ['user'], text: 'Sarah will be notified in 30 s', tone: 'warn', vibrate: true }, nowMs);
     if (k === 'buddy')
       addEvent(w, { id: `${c.id}-buddy`, to: ['user'], text: 'Sarah has been alerted that you missed a check-in', tone: 'danger', vibrate: true }, nowMs);
     if (k === 'nok')
