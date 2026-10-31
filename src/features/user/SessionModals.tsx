@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Calendar, Car, ChevronDown, Clock, Footprints, MapPin, Search, Star } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, Car, ChevronDown, Clock, Footprints, MapPin, Search, Star } from 'lucide-react';
 import { DEST_ANCHOR, DEST_SIZE, MapView, destHtml, type MapMarker } from '../../components/MapView';
 import { Avatar, Button, Modal, cx, ui } from '../../components/ui';
 import { TimeWheel } from '../../components/TimeWheel';
@@ -12,6 +12,14 @@ import { openRide } from './common';
 import s from './user.module.css';
 
 type ListTab = 'recent' | 'favourites' | 'all';
+type WizardStep = 'location' | 'return' | 'buddies';
+
+const WIZARD_STEPS: WizardStep[] = ['location', 'return', 'buddies'];
+const WIZARD_LABELS: Record<WizardStep, string> = {
+  location: 'Location / Venue',
+  return: 'Estimated Return',
+  buddies: 'Night Buddies',
+};
 
 /**
  * Session-scoped favourites, seeded from the cast data. Kept at module level so starred contacts
@@ -20,7 +28,7 @@ type ListTab = 'recent' | 'favourites' | 'all';
 const FAVOURITES = new Set(CONTACTS.filter((c) => c.favourite).map((c) => c.id));
 
 /** "Tonight's Session" form shared by Start and Edit (DESIGN §5.2). */
-export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode: 'start' | 'edit'; layout?: 'expanded' | 'accordion'; onEditSaved?: (values: { venue: string; returnMin: number }) => void }) {
+export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode: 'start' | 'edit'; layout?: 'expanded' | 'accordion' | 'wizard'; onEditSaved?: (values: { venue: string; returnMin: number }) => void }) {
   const session = useWorld((w) => w.world.chloe.session);
   const simNowMin = useWorld((w) => nowMin(w.world));
   const { editPreset, set, toast } = useUi();
@@ -44,6 +52,7 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
   const [q, setQ] = useState('');
   const [tab, setTab] = useState<ListTab>('recent');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({ location: false, return: false, buddies: false });
+  const [wizardStep, setWizardStep] = useState<WizardStep>('location');
 
   const suggestions = venue.trim() && venueFocus ? VENUES.filter((v) => v.name.toLowerCase().includes(venue.trim().toLowerCase()) && v.name !== venue) : [];
   const list = useMemo(() => {
@@ -64,8 +73,10 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
   };
 
   const valid = venue.trim().length > 0 && buddies.length > 0 && !returnInPast;
+  const wizardStepIndex = WIZARD_STEPS.indexOf(wizardStep);
+  const wizardStepValid = wizardStep === 'location' ? venue.trim().length > 0 : wizardStep === 'return' ? !returnInPast : buddies.length > 0;
   const section = (id: keyof typeof openSections, title: string, summary: string, content: React.ReactNode) =>
-    layout === 'expanded' ? content : (
+    layout === 'wizard' ? (id === wizardStep ? content : null) : layout === 'expanded' ? content : (
       <section className={s.accordion}>
         <button type="button" className={s.accordionTrigger} aria-expanded={openSections[id]} onClick={() => setOpenSections((v) => ({ ...v, [id]: !v[id] }))}>
           <span className={s.accordionHeading}>{title}<small>{summary}</small></span>
@@ -91,15 +102,26 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
     <>
     <Modal title={mode === 'start' ? "Tonight's Session" : 'Edit Session'} onClose={close}>
       <div className={s.form}>
-        {section('location', 'Target location', venue || 'Choose a venue', <div className={ui.field}>
-          <label className={ui.label} htmlFor="venue">
-            Target location / venue
-          </label>
+        {layout === 'wizard' && (
+          <div className={s.wizardProgress} role="status" aria-live="polite">
+            <div className={s.wizardProgressHeading}>
+              <span className={s.wizardStepCount}>STEP {wizardStepIndex + 1} OF {WIZARD_STEPS.length}</span>
+              <span className={s.wizardStepName}>{WIZARD_LABELS[wizardStep]}</span>
+            </div>
+            <div className={s.wizardProgressTrack} aria-hidden="true">
+              {WIZARD_STEPS.map((step, index) => (
+                <span key={step} className={cx(s.wizardProgressSegment, index <= wizardStepIndex && s.wizardProgressSegmentActive)} />
+              ))}
+            </div>
+          </div>
+        )}
+        {section('location', 'Location / Venue', venue || 'Choose a venue', <div className={ui.field}>
           <input
             id="venue"
             className={ui.input}
             value={venue}
             placeholder="Search location"
+            required
             autoComplete="off"
             onFocus={() => setVenueFocus(true)}
             onChange={(e) => {
@@ -130,11 +152,12 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
           <Button variant="text" style={{ alignSelf: 'flex-start' }} onClick={() => setPicking(true)}>
             <MapPin size={16} /> Select from map
           </Button>
+          {!venue.trim() && <p className={cx(ui.muted, ui.small)}>Choose a target location to continue.</p>}
         </div>)}
 
-        {section('return', 'Estimated return', `${returnDay === todayIdx ? 'Today' : 'Tomorrow'} · ${fmtTime(returnMin)}`, <div className={ui.field}>
+        {section('return', 'Estimated Return', `${returnDay === todayIdx ? 'Today' : 'Tomorrow'} · ${fmtTime(returnMin)}`, <div className={ui.field}>
           <span className={ui.label} id="ret-lbl">
-            Estimated return
+            Estimated Return
           </span>
           {/* Date + time together, so a session started at 11 PM can end at 2 AM the next day. */}
           <div className={s.dateTime} role="group" aria-labelledby="ret-lbl">
@@ -179,7 +202,7 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
             <div className={s.segTabs} role="tablist">
               {(['recent', 'favourites', 'all'] as const).map((t) => (
                 <button key={t} type="button" role="tab" aria-selected={tab === t} className={cx(s.segTab, tab === t && s.segTabOn)} onClick={() => setTab(t)}>
-                  {t === 'recent' ? 'Recent' : t === 'favourites' ? 'Favourites' : 'All contacts'}
+                  {t === 'recent' ? 'Recent' : t === 'favourites' ? 'Favourites' : 'All'}
                 </button>
               ))}
             </div>
@@ -213,11 +236,29 @@ export function SessionModal({ mode, layout = 'expanded', onEditSaved }: { mode:
             {list.length === 0 && <p className={cx(ui.muted, ui.small)}>No SafeSip contacts match.</p>}
           </div>
           <p className={cx(ui.muted, ui.small)}>Only contacts who use SafeSip are listed.</p>
+          {buddies.length === 0 && <p className={cx(ui.muted, ui.small)}>Select at least one Night Buddy to continue.</p>}
         </div>)}
 
-        <Button variant="primary" block disabled={!valid} onClick={submit}>
-          {mode === 'start' ? "Let's Go!" : 'Confirm'}
-        </Button>
+        {layout === 'wizard' ? (
+          <div className={s.wizardActions}>
+            <Button variant="secondary" onClick={() => setWizardStep(WIZARD_STEPS[wizardStepIndex - 1])} disabled={wizardStepIndex === 0}>
+              <ArrowLeft size={18} /> Back
+            </Button>
+            {wizardStepIndex < WIZARD_STEPS.length - 1 ? (
+              <Button variant="primary" onClick={() => setWizardStep(WIZARD_STEPS[wizardStepIndex + 1])} disabled={!wizardStepValid}>
+                Next <ArrowRight size={18} />
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={submit} disabled={!valid}>
+                Let's Go!
+              </Button>
+            )}
+          </div>
+        ) : (
+          <Button variant="primary" block disabled={!valid} onClick={submit}>
+            {mode === 'start' ? "Let's Go!" : 'Confirm'}
+          </Button>
+        )}
       </div>
     </Modal>
     {picking && (

@@ -499,6 +499,49 @@
 .accordionChevronOpen { transform: rotate(180deg); }
 .accordionBody { padding: 0 14px 14px; border-top: 1px solid var(--line); }
 .accordionBody > :first-child { padding-top: 14px; }
+.wizardProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 2px 2px 4px;
+}
+.wizardProgressHeading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wizardStepCount {
+  color: var(--brand-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.wizardStepName {
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+.wizardProgressTrack {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.wizardProgressSegment {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background-color 160ms ease;
+}
+.wizardProgressSegmentActive { background: var(--brand); }
+.wizardActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+.wizardActions > button { min-width: 112px; }
+.wizardActions > button:last-child { margin-left: auto; }
 .suggest {
   border: 1.5px solid var(--line);
   border-radius: 14px;

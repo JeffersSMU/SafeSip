@@ -92,7 +92,9 @@ export function UserShell() {
         />
       )}
 
-      {(ui_.modal === 'start' || ui_.modal === 'edit') && <SessionModal mode={ui_.modal} />}
+      {(ui_.modal === 'start' || ui_.modal === 'edit') && (
+        <SessionModal mode={ui_.modal} layout={ui_.modal === 'start' ? 'wizard' : 'accordion'} />
+      )}
       {ui_.modal === 'end' && <EndSessionModal />}
       {ui_.sheet?.kind === 'person' && <PersonSheet id={ui_.sheet.id} />}
       {c.arrival && <ArrivalModal />}
