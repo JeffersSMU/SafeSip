@@ -174,7 +174,7 @@ export function DualCamera() {
     } catch (e) {
       if (stale()) return;
       const name = (e as DOMException)?.name;
-      goStock(name === 'NotAllowedError' ? 'Camera permission was denied, so we’re using sample photos.' : 'No camera found, so we’re using sample photos.');
+      goStock(name === 'NotAllowedError' ? 'Camera permission was denied, so we’re using sample photos.' : '');
       return;
     }
     if (stale()) return stopStream(firstStream);
