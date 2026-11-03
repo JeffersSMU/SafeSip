@@ -15,7 +15,7 @@ function Brand() {
       <div aria-hidden>
         <img src='/icon.png' className={s.logo}></img>
       </div>
-      <p className={s.tagline}>Socialize in peace. Parents at ease.</p>
+      <p className={s.tagline}>Unwind in peace. Parents at ease.</p>
     </div>
   );
 }
